@@ -1,6 +1,6 @@
 Name: org.tizen.data-provider-slave
 Summary: Slave data provider
-Version: 0.8.13
+Version: 0.8.16
 Release: 1
 Group: main/app
 License: Flora License

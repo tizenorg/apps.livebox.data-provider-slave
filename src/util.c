@@ -138,6 +138,11 @@ static inline void compensate_timer(Ecore_Timer *timer)
 	double delay;
 	double pending;
 
+	if (ecore_timer_interval_get(timer) <= 1.0f) {
+		DbgPrint("Doesn't need to sync the timer to start from ZERO sec\n");
+		return;
+	}
+
 	if (gettimeofday(&tv, NULL) < 0) {
 		ErrPrint("Error: %s\n", strerror(errno));
 		return;

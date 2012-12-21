@@ -71,9 +71,6 @@ struct conf {
 
 	double ping_time;
 
-	char *vconf_sys_cluster;
-	int max_pended_ctx_events;
-
 	int use_sw_backend;
 	char *provider_method;
 	int debug_mode;
@@ -141,9 +138,6 @@ extern int conf_loader(void);
 #define DEFAULT_CLUSTER	"user,created"
 #define MINIMUM_REACTIVATION_TIME	10
 
-#define SYS_CLUSTER_KEY		g_conf.vconf_sys_cluster
-
-#define MAX_PENDED_CTX_EVENTS	g_conf.max_pended_ctx_events
 #define HAPI __attribute__((visibility("hidden")))
 
 /* Set language */

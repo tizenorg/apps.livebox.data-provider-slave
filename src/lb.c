@@ -175,7 +175,7 @@ cleanout:
 	return ECORE_CALLBACK_CANCEL;
 }
 
-static inline int activate_pending_consumer(void)
+static inline __attribute__((always_inline)) int activate_pending_consumer(void)
 {
 	if (s_info.pending_timer)
 		return 0;
@@ -219,7 +219,7 @@ static inline void deactivate_pd_open_pending_consumer(void)
 	DbgPrint("Clear the open_pd_pending timer\n");
 }
 
-static inline int activate_pd_open_pending_consumer(void)
+static inline int __attribute__((always_inline)) activate_pd_open_pending_consumer(void)
 {
 	if (s_info.pd_open_pending_timer)
 		return 0;
@@ -345,6 +345,9 @@ static inline void timer_freeze(struct item *item)
 {
 	struct timeval tv;
 	ecore_timer_freeze(item->timer);
+
+	if (ecore_timer_interval_get(item->timer) <= 1.0f)
+		return;
 
 	gettimeofday(&tv, NULL);
 	item->sleep_at = (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0f;
