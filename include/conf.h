@@ -61,6 +61,8 @@ struct conf {
 		char *root;
 		char *script_port;
 		char *slave_log;
+		char *reader;
+		char *always;
 		char *db;
 		char *module;
 	} path;
@@ -118,6 +120,8 @@ extern int conf_loader(void);
 #define CONF_PATH		g_conf.path.conf
 #define ROOT_PATH		g_conf.path.root
 #define SLAVE_LOG_PATH		g_conf.path.slave_log
+#define READER_PATH		g_conf.path.reader
+#define ALWAYS_PATH		g_conf.path.always
 #define MODULE_PATH		g_conf.path.module
 
 #define REPLACE_TAG_APPID	g_conf.replace_tag

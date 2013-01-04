@@ -1,11 +1,11 @@
 Name: org.tizen.data-provider-slave
 Summary: Slave data provider
-Version: 0.8.17
+Version: 0.8.18
 Release: 1
 Group: main/app
 License: Flora License
 Source0: %{name}-%{version}.tar.gz
-BuildRequires: cmake, gettext-tools
+BuildRequires: cmake, gettext-tools, coreutils
 BuildRequires: pkgconfig(appcore-efl)
 BuildRequires: pkgconfig(ail)
 BuildRequires: pkgconfig(dlog)
@@ -42,13 +42,15 @@ CFLAGS="${CFLAGS} -Wall -Winline -Werror -fno-builtin-malloc" make %{?jobs:-j%jo
 %install
 rm -rf %{buildroot}
 %make_install
-mkdir -p %{buildroot}/usr/share/license
+mkdir -p %{buildroot}/%{_datarootdir}/license
 
 %post
 
 %files -n org.tizen.data-provider-slave
 %manifest org.tizen.data-provider-slave.manifest
 %defattr(-,root,root,-)
-/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave
-/usr/share/packages/org.tizen.data-provider-slave.xml
-/usr/share/license/*
+%{_prefix}/apps/org.tizen.data-provider-slave/bin/data-provider-slave
+%{_datarootdir}/packages/org.tizen.data-provider-slave.xml
+%{_datarootdir}/license/*
+
+# End of a file
