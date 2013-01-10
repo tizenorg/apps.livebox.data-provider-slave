@@ -49,5 +49,6 @@ extern void lb_turn_secured_on(void);
  * Exported API for each liveboxes
  */
 extern const char *livebox_find_pkgname(const char *filename);
+extern int livebox_request_update_by_id(const char *filename);
 
 /* End of a file */

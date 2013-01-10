@@ -691,6 +691,20 @@ const char *livebox_find_pkgname(const char *filename)
 	return NULL;
 }
 
+int livebox_request_update_by_id(const char *filename)
+{
+	Eina_List *l;
+	struct item *item;
+
+	EINA_LIST_FOREACH(s_info.item_list, l, item) {
+		if (!strcmp(item->inst->id, filename)) {
+			return append_pending_list(item);
+		}
+	}
+
+	return -ENOENT;
+}
+
 HAPI int lb_open_pd(const char *pkgname)
 {
 	Eina_List *l;
