@@ -4,7 +4,7 @@
 		<domain name="org.tizen.data-provider-slave" policy="restricted" />
 	</define>
 	<request>
-		<domain name="_" />
+		<domain name="org.tizen.data-provider-slave" />
 	</request>
 
 	<assign>

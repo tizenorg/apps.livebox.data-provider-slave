@@ -1,6 +1,6 @@
 Name: org.tizen.data-provider-slave
 Summary: Slave data provider
-Version: 0.8.19
+Version: 0.9.0
 Release: 1
 Group: main/app
 License: Flora License
@@ -52,5 +52,6 @@ mkdir -p %{buildroot}/%{_datarootdir}/license
 %{_prefix}/apps/org.tizen.data-provider-slave/bin/data-provider-slave
 %{_datarootdir}/packages/org.tizen.data-provider-slave.xml
 %{_datarootdir}/license/*
+%{_sysconfdir}/smack/accesses2.d/org.tizen.data-provider-slave.rule
 
 # End of a file
