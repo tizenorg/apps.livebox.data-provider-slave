@@ -117,6 +117,15 @@ static Eina_Bool property_cb(void *data, int type, void *event)
 	return ECORE_CALLBACK_PASS_ON;
 }
 
+static void time_changed_cb(keynode_t *node, void *user_data)
+{
+	if (vconf_keynode_get_int(node) != VCONFKEY_SYSMAN_STIME_CHANGED)
+		return;
+
+	DbgPrint("Time is changed\n");
+	lb_system_event_all(LB_SYS_EVENT_TIME_CHANGED);
+}
+
 static bool app_create(void *data)
 {
 	int ret;
@@ -147,6 +156,9 @@ static bool app_create(void *data)
 	DbgPrint("Crash recover is initiated: %d\n", ret);
 	ret = update_monitor_init();
 	DbgPrint("Content update monitor is initiated: %d\n", ret);
+
+	ret = vconf_notify_key_changed(VCONFKEY_SYSMAN_STIME, time_changed_cb, NULL);
+	DbgPrint("System time event callback added: %d\n", ret);
 
 	return TRUE;
 }
