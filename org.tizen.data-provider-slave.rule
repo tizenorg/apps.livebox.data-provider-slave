@@ -11,3 +11,4 @@ org.tizen.data-provider-slave dbus wx
 org.tizen.data-provider-slave contacts-service x
 org.tizen.data-provider-slave org.tizen.data-provider-master::data r
 org.tizen.data-provider-slave org.tizen.data-provider-master::share rwx
+org.tizen.data-provider-slave org.tizen.data-provider-master::db r
