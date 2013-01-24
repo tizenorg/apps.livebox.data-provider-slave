@@ -332,13 +332,12 @@ HAPI int client_init(const char *name)
 		.lb_resume = method_lb_resume,
 	};
 
-	provider_init(ecore_x_display_get(), name, &table, NULL);
-	return 0;
+	return provider_init(ecore_x_display_get(), name, &table, NULL);
 }
 
 HAPI int client_fini(void)
 {
-	provider_fini();
+	(void)provider_fini();
 	return 0;
 }
 

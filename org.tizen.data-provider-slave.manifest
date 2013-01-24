@@ -4,16 +4,14 @@
 		<domain name="org.tizen.data-provider-slave" policy="restricted" />
 	</define>
 	<request>
-		<domain name="org.tizen.data-provider-slave" />
+		<domain name="_" />
 	</request>
 
 	<assign>
 		<!-- Executable file -->
-		<!-- "_" should be replaced with "data-provider-slave::bin" -->
 		<filesystem path="/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave" label="org.tizen.data-provider-slave" exec_label="org.tizen.data-provider-slave" />
 
 		<!-- For the package manager -->
-		<!-- <filesystem path="/usr/share/applications/org.tizen.data-provider-slave.desktop" label="_" /> -->
 		<filesystem path="/usr/share/packages/org.tizen.data-provider-slave.xml" label="_" />
 	</assign>
 </manifest>
