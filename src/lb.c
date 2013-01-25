@@ -889,7 +889,6 @@ HAPI int lb_destroy(const char *pkgname, const char *id)
 	Eina_List *l;
 	struct instance *inst;
 	struct item *item;
-	int ret;
 
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
@@ -923,7 +922,7 @@ HAPI int lb_destroy(const char *pkgname, const char *id)
 
 	if (!item->monitor) {
 		free(item);
-		ret = so_destroy(inst);
+		(void)so_destroy(inst);
 	}
 
 	return 0;
@@ -1100,7 +1099,6 @@ HAPI int lb_is_pinned_up(const char *pkgname, const char *id)
 	Eina_List *l;
 	struct instance *inst;
 	struct item *item;
-	int ret;
 
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
@@ -1115,13 +1113,16 @@ HAPI int lb_is_pinned_up(const char *pkgname, const char *id)
 	}
 
 	item = eina_list_data_get(l);
+	if (!item) {
+		ErrPrint("Invalid item(%s - %s)\n", pkgname, id);
+		return -EFAULT;
+	}
 	/*!
 	 * NOTE:
 	 * item is not used.
 	 * Maybe this is not neccessary for this operation
 	 */
-	ret = so_is_pinned_up(inst);
-	return ret;
+	return so_is_pinned_up(inst);
 }
 
 HAPI int lb_change_group(const char *pkgname, const char *id, const char *cluster, const char *category)

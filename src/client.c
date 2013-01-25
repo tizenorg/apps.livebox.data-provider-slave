@@ -330,6 +330,8 @@ HAPI int client_init(const char *name)
 		.pd_destroy = method_pd_destroyed,
 		.lb_pause = method_lb_pause,
 		.lb_resume = method_lb_resume,
+		.pd_access = NULL,
+		.lb_access = NULL,
 	};
 
 	return provider_init(ecore_x_display_get(), name, &table, NULL);
