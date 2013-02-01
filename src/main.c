@@ -55,7 +55,7 @@ extern void evas_common_font_flush(void);
 extern int evas_common_font_cache_get(void);
 extern void evas_common_font_cache_set(int size);
 
-#define TEXT_CLASS	"slp"
+#define TEXT_CLASS	"tizen"
 #define TEXT_SIZE	-100
 
 static struct info {
@@ -221,6 +221,7 @@ static void app_service(service_h service, void *data)
 
 	ret = service_get_extra_data(service, "secured", &secured);
 	if (ret != SERVICE_ERROR_NONE) {
+		free(name);
 		ErrPrint("Secured is not valid\n");
 		return;
 	}
@@ -239,6 +240,7 @@ static void app_service(service_h service, void *data)
 	DbgPrint("Name assigned: %s\n", name);
 	DbgPrint("Secured: %s\n", secured);
 	ret = client_init(name);
+	free(name);
 
 	initialized = 1;
 	return;
@@ -305,6 +307,11 @@ int main(int argc, char *argv[])
 	ret = app_efl_main(&argc, &argv, &event_callback, NULL);
 	critical_log_fini();
 	return ret;
+}
+
+HAPI int main_heap_monitor_is_enabled(void)
+{
+	return s_info.heap_monitor;
 }
 
 /* End of a file */

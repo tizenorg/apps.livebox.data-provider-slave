@@ -14,4 +14,6 @@
  * limitations under the License.
  */
 
+extern int main_heap_monitor_is_enabled(void);
+
 /* End of a file */

@@ -26,6 +26,7 @@
 #include <heap-monitor.h>
 #include <livebox-service.h>
 
+#include "main.h"
 #include "critical_log.h"
 #include "debug.h"
 #include "so_handler.h"
@@ -887,6 +888,9 @@ HAPI int so_get_output_info(struct instance *inst, int *w, int *h, double *prior
 			inst->title = *title;
 		}
 	}
+
+	if (main_heap_monitor_is_enabled())
+		DbgPrint("%s allocates %d bytes\n", item->pkgname, heap_monitor_target_usage(item->so_fname));
 
 	return ret;
 }
