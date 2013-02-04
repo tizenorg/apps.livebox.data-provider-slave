@@ -13,6 +13,6 @@ org.tizen.data-provider-slave dbus wx
 org.tizen.data-provider-slave data-provider-master::data rx
 org.tizen.data-provider-slave data-provider-master::share rwx
 org.tizen.data-provider-slave data-provider-master::db rw
-org.tizen.data-provider-slave data-provider-master w
+org.tizen.data-provider-slave data-provider-master rw
 org.tizen.data-provider-slave e17 rx
 org.tizen.app-tray org.tizen.data-provider-slave rx

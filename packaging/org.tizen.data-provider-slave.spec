@@ -1,6 +1,8 @@
+%define app_data /opt/usr/apps/org.tizen.add-viewer/data
+
 Name: org.tizen.data-provider-slave
 Summary: Plugin type livebox service provider.
-Version: 0.9.8
+Version: 0.9.9
 Release: 1
 Group: frameowrk/livebox
 License: Flora License
@@ -44,6 +46,7 @@ CFLAGS="${CFLAGS} -Wall -Winline -Werror -fno-builtin-malloc" make %{?jobs:-j%jo
 rm -rf %{buildroot}
 %make_install
 mkdir -p %{buildroot}/%{_datarootdir}/license
+mkdir -p %{buildroot}%{app_data}
 
 %post
 
@@ -54,5 +57,6 @@ mkdir -p %{buildroot}/%{_datarootdir}/license
 %{_datarootdir}/packages/org.tizen.data-provider-slave.xml
 %{_datarootdir}/license/*
 %{_sysconfdir}/smack/accesses2.d/org.tizen.data-provider-slave.rule
+%attr(-,app,app) %dir %{app_data}
 
 # End of a file

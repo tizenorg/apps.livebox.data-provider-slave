@@ -13,5 +13,8 @@
 
 		<!-- For the package manager -->
 		<filesystem path="/usr/share/packages/org.tizen.data-provider-slave.xml" label="_" />
+
+		<!-- Application Data folder -->
+		<filesystem path="/opt/usr/apps/org.tizen.data-provider-slave/data" label="org.tizen.data-provider-slave" />
 	</assign>
 </manifest>
