@@ -4,6 +4,7 @@ org.tizen.data-provider-slave system::homedir rwxat
 org.tizen.data-provider-slave system::use_internet rw
 org.tizen.data-provider-slave system::media rwxat
 org.tizen.data-provider-slave system::share rwxat
+org.tizen.data-provider-slave sys-assert::core rwxat
 org.tizen.data-provider-slave pluseaudio rwxat
 org.tizen.data-provider-slave ail::db rw
 org.tizen.data-provider-slave app-svc::db rw
@@ -11,8 +12,9 @@ org.tizen.data-provider-slave xorg w
 org.tizen.data-provider-slave isf rwx
 org.tizen.data-provider-slave dbus wx
 org.tizen.data-provider-slave data-provider-master::data rx
-org.tizen.data-provider-slave data-provider-master::share rwx
+org.tizen.data-provider-slave data-provider-master::share rwxt
 org.tizen.data-provider-slave data-provider-master::db rw
 org.tizen.data-provider-slave data-provider-master rw
 org.tizen.data-provider-slave e17 rx
+org.tizen.data-provider-slave dali x
 org.tizen.app-tray org.tizen.data-provider-slave rx

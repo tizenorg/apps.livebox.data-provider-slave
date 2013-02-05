@@ -2,7 +2,7 @@
 
 Name: org.tizen.data-provider-slave
 Summary: Plugin type livebox service provider.
-Version: 0.9.9
+Version: 0.9.11
 Release: 1
 Group: frameowrk/livebox
 License: Flora License
