@@ -311,31 +311,25 @@ static inline int append_pending_list(struct item *item)
 
 static inline void timer_thaw(struct item *item)
 {
-	struct timeval tv;
 	double pending;
-	double compensate;
+	double period;
+	double delay;
 	double sleep_time;
 
 	ecore_timer_thaw(item->timer);
+	period = ecore_timer_interval_get(item->timer);
+	pending = ecore_timer_pending_get(item->timer);
+	delay = util_time_delay_for_compensation(period) - pending;
+	ecore_timer_delay(item->timer, delay);
+	DbgPrint("Compensated: %lf\n", delay);
 
 	if (item->sleep_at == 0.0f)
 		return;
 
-	pending = ecore_timer_pending_get(item->timer);
-
-	if (gettimeofday(&tv, NULL) < 0) {
-		ErrPrint("Failed to get timeofday: %s\n", strerror(errno));
-		return;
-	}
-	sleep_time = ((double)tv.tv_sec + (double)tv.tv_usec / 1000000.0f) - item->sleep_at;
-	compensate = 60.0f - ((double)(tv.tv_sec % 60) + ((double)tv.tv_usec / 1000000.0f));
-
-	ecore_timer_delay(item->timer, compensate - pending);
-	DbgPrint("Compensate timer: %lf\n", compensate - pending);
-
+	sleep_time = util_timestamp() - item->sleep_at;
 	if (sleep_time > pending) {
-		DbgPrint("Append pending list to update content\n");
-		(void)append_pending_list(item);
+		DbgPrint("Update time elapsed\n");
+		(void)updator_cb(item);
 	}
 
 	item->sleep_at = 0.0f;
@@ -451,11 +445,16 @@ static int file_updated_cb(const char *filename, void *data, int over)
 	double priority;
 	char *content;
 	char *title;
+	int ret;
 
 	if (over)
 		WarnPrint("Event Q overflow\n");
 
 	item = data;
+
+	ret = util_get_filesize(filename);
+	if (ret <= 0)
+		ErrPrint("Content is updated. but invalid. ret = %d\n", ret);
 
 	(void)so_get_output_info(item->inst, &w, &h, &priority, &content, &title);
 	provider_send_updated(item->inst->item->pkgname, item->inst->id,

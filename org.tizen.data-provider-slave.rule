@@ -17,4 +17,6 @@ org.tizen.data-provider-slave data-provider-master::db rw
 org.tizen.data-provider-slave data-provider-master rw
 org.tizen.data-provider-slave e17 rx
 org.tizen.data-provider-slave dali x
+org.tizen.data-provider-slave pulseaudio rwxat
+e17 org.tizen.data-provider-slave w
 org.tizen.app-tray org.tizen.data-provider-slave rx

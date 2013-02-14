@@ -21,6 +21,8 @@ extern char *util_get_current_module(char **symbol);
 extern const char *util_uri_to_path(const char *uri);
 extern void *util_timer_add(double interval, Eina_Bool (*cb)(void *data), void *data);
 extern void util_timer_interval_set(void *timer, double interval);
+extern int util_get_filesize(const char *filename);
+extern double util_time_delay_for_compensation(double period);
 
 #define SCHEMA_FILE	"file://"
 #define SCHEMA_PIXMAP	"pixmap://"
