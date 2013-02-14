@@ -1,8 +1,8 @@
-%define app_data /opt/usr/apps/org.tizen.add-viewer/data
+%define app_data /opt/usr/apps/org.tizen.data-provider-slave/data
 
 Name: org.tizen.data-provider-slave
 Summary: Plugin type livebox service provider.
-Version: 0.9.13
+Version: 0.9.14
 Release: 1
 Group: frameowrk/livebox
 License: Flora License

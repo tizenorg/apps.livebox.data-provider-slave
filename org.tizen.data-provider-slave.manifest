@@ -4,10 +4,14 @@
 		<domain name="org.tizen.data-provider-slave" policy="restricted" />
 	</define>
 	<request>
-		<domain name="_" />
+		<domain name="org.tizen.data-provider-slave" />
 	</request>
 
 	<assign>
+		<!-- Application folder -->
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave" label="org.tizen.data-provider-slave" />
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave/bin" label="org.tizen.data-provider-slave" />
+
 		<!-- Executable file -->
 		<filesystem path="/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave" label="org.tizen.data-provider-slave" exec_label="org.tizen.data-provider-slave" />
 
@@ -16,5 +20,6 @@
 
 		<!-- Application Data folder -->
 		<filesystem path="/opt/usr/apps/org.tizen.data-provider-slave/data" label="org.tizen.data-provider-slave" />
+		<filesystem path="/opt/usr/apps/org.tizen.data-provider-slave" label="org.tizen.data-provider-slave" />
 	</assign>
 </manifest>
