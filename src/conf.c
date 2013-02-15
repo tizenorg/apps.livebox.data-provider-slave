@@ -55,6 +55,7 @@ HAPI struct conf g_conf = {
 	.replace_tag = "/APPID/",
 
 	.slave_ttl = 30.0f,
+	.slave_activate_time = 30.0f,
 
 	.max_log_line = 1000,
 	.max_log_file = 3,
@@ -224,6 +225,13 @@ static void slave_ttl_handler(char *buffer)
 	DbgPrint("Slave TTL: %s\n", g_conf.slave_ttl);
 }
 
+static void slave_activate_time_handler(char *buffer)
+{
+	if (sscanf(buffer, "%lf", &g_conf.slave_activate_time) != 1)
+		ErrPrint("Failed to parse the slave_activate_time\n");
+	DbgPrint("Slave activate time: %lf\n", g_conf.slave_activate_time);
+}
+
 static void max_log_line_handler(char *buffer)
 {
 	if (sscanf(buffer, "%d", &g_conf.max_log_line) != 1)
@@ -382,6 +390,10 @@ HAPI int conf_loader(void)
 		{
 			.name = "slave_ttl",
 			.handler = slave_ttl_handler,
+		},
+		{
+			.name = "slave_activate_time",
+			.handler = slave_activate_time_handler,
 		},
 		{
 			.name = "max_log_line",
