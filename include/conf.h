@@ -79,6 +79,7 @@ struct conf {
 	int debug_mode;
 	int overwrite_content;
 	int com_core_thread;
+	int use_xmonitor;
 };
 
 extern struct conf g_conf;
@@ -91,6 +92,7 @@ extern int conf_loader(void);
 #define CR 13
 #define LF 10
 
+#define USE_XMONITOR		g_conf.use_xmonitor
 #define USE_SW_BACKEND		g_conf.use_sw_backend
 #define PROVIDER_METHOD		g_conf.provider_method
 #define DEBUG_MODE		g_conf.debug_mode

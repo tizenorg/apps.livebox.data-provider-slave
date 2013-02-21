@@ -20,6 +20,8 @@
 #include <malloc.h>
 #include <mcheck.h>
 
+#include <Elementary.h>
+
 #include <glib.h>
 #include <glib-object.h>
 #include <gio/gio.h>
@@ -132,6 +134,7 @@ static bool app_create(void *data)
 
 	ret = conf_loader();
 	DbgPrint("Configureation manager is initiated: %d\n", ret);
+	DbgPrint("Scale factor: %lf\n", elm_config_scale_get());
 
 	if (COM_CORE_THREAD)
 		setenv("PROVIDER_COM_CORE_THREAD", "true", 0);

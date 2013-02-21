@@ -87,11 +87,18 @@ HAPI struct conf g_conf = {
 	.debug_mode = 0,
 	.overwrite_content = 0,
 	.com_core_thread = 1,
+	.use_xmonitor = 1,
 };
 
 static void conf_update_size(void)
 {
 	ecore_x_window_size_get(0, &g_conf.width, &g_conf.height);
+}
+
+static void use_xmonitor(char *buffer)
+{
+	g_conf.use_xmonitor = !strcasecmp(buffer, "true");
+	DbgPrint("Use xmonitor: %d\n", g_conf.use_xmonitor);
 }
 
 static void use_sw_backend_handler(char *buffer)
@@ -222,7 +229,7 @@ static void slave_ttl_handler(char *buffer)
 {
 	if (sscanf(buffer, "%lf", &g_conf.slave_ttl) != 1)
 		ErrPrint("Failed to parse the slave_ttl\n");
-	DbgPrint("Slave TTL: %s\n", g_conf.slave_ttl);
+	DbgPrint("Slave TTL: %lf\n", g_conf.slave_ttl);
 }
 
 static void slave_activate_time_handler(char *buffer)
@@ -442,6 +449,10 @@ HAPI int conf_loader(void)
 		{
 			.name = "use_sw_backend",
 			.handler = use_sw_backend_handler,
+		},
+		{
+			.name = "use_xmonitor",
+			.handler = use_xmonitor,
 		},
 		{
 			.name = "provider_method",
