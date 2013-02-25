@@ -49,6 +49,8 @@ mkdir -p %{buildroot}/%{_datarootdir}/license
 mkdir -p %{buildroot}%{app_data}
 
 %post
+chown 5000:5000 %{app_data}
+chmod 755 %{app_data}
 
 %files -n org.tizen.data-provider-slave
 %manifest org.tizen.data-provider-slave.manifest
@@ -57,6 +59,6 @@ mkdir -p %{buildroot}%{app_data}
 %{_datarootdir}/packages/org.tizen.data-provider-slave.xml
 %{_datarootdir}/license/*
 %{_sysconfdir}/smack/accesses2.d/org.tizen.data-provider-slave.rule
-%attr(-,app,app) %dir %{app_data}
+%dir %{app_data}
 
 # End of a file
