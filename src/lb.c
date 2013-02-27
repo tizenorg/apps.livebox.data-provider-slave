@@ -544,6 +544,7 @@ static Eina_Bool updator_cb(void *data)
 	}
 
 	if (s_info.update || pd_is_opened(item->inst->item->pkgname) < 0) {
+		DbgPrint("%s is busy\n", s_info.update ? s_info.update->inst->id : item->inst->id);
 		(void)append_pending_list(item);
 		return ECORE_CALLBACK_RENEW;
 	}

@@ -47,7 +47,7 @@ static struct info {
 static int method_new(struct event_arg *arg, int *width, int *height, double *priority, void *data)
 {
 	int ret;
-	DbgPrint("Create: pkgname[%s], id[%s], content[%s], timeout[%d], has_script[%d], period[%lf], cluster[%s], category[%s], skip[%d], abi[%s]\n",
+	DbgPrint("Create: pkgname[%s], id[%s], content[%s], timeout[%d], has_script[%d], period[%lf], cluster[%s], category[%s], skip[%d], abi[%s], size: %dx%d\n",
 		arg->pkgname,
 		arg->id,
 		arg->info.lb_create.content,
@@ -56,7 +56,9 @@ static int method_new(struct event_arg *arg, int *width, int *height, double *pr
 		arg->info.lb_create.period,
 		arg->info.lb_create.cluster, arg->info.lb_create.category,
 		arg->info.lb_create.skip_need_to_create,
-		arg->info.lb_create.abi);
+		arg->info.lb_create.abi,
+		arg->info.lb_create.width,
+		arg->info.lb_create.height);
 
 	ret = lb_create(arg->pkgname, arg->id,
 			arg->info.lb_create.content,
