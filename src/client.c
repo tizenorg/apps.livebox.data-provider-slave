@@ -300,6 +300,21 @@ static int method_pd_destroyed(struct event_arg *arg, void *data)
 	return 0;
 }
 
+static int method_pd_move(struct event_arg *arg, void *data)
+{
+	int ret;
+	struct event_info info;
+
+	memset(&info, 0, sizeof(info));
+	info.pointer.x = arg->info.pd_move.x;
+	info.pointer.y = arg->info.pd_move.y;
+	info.pointer.down = 0;
+
+	ret = lb_script_event(arg->pkgname, arg->id,
+				"pd,move", util_uri_to_path(arg->id), &info);
+	return ret;
+}
+
 static int method_lb_pause(struct event_arg *arg, void *data)
 {
 	return lb_pause(arg->pkgname, arg->id);
@@ -330,6 +345,7 @@ HAPI int client_init(const char *name)
 		.connected = method_connected,
 		.pd_create = method_pd_created,
 		.pd_destroy = method_pd_destroyed,
+		.pd_move = method_pd_move,
 		.lb_pause = method_lb_pause,
 		.lb_resume = method_lb_resume,
 		.pd_access = NULL,

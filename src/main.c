@@ -199,6 +199,11 @@ static void app_resume(void *data)
 	return;
 }
 
+static void app_region_changed(void *data)
+{
+	lb_system_event_all(LB_SYS_EVENT_REGION_CHANGED);
+}
+
 static void app_language_changed(void *data)
 {
 	lb_system_event_all(LB_SYS_EVENT_LANG_CHANGED);
@@ -307,6 +312,7 @@ int main(int argc, char *argv[])
 	event_callback.low_battery = NULL;
 	event_callback.device_orientation = NULL;
 	event_callback.language_changed = app_language_changed;
+	event_callback.region_format_changed = app_region_changed;
 	ret = app_efl_main(&argc, &argv, &event_callback, NULL);
 	critical_log_fini();
 	return ret;
