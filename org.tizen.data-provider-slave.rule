@@ -5,7 +5,6 @@ org.tizen.data-provider-slave system::use_internet rw
 org.tizen.data-provider-slave system::media rwxat
 org.tizen.data-provider-slave system::share rwxat
 org.tizen.data-provider-slave sys-assert::core rwxat
-org.tizen.data-provider-slave pluseaudio rwxat
 org.tizen.data-provider-slave ail::db rw
 org.tizen.data-provider-slave app-svc::db rw
 org.tizen.data-provider-slave xorg w
