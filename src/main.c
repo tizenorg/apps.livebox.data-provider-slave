@@ -302,6 +302,9 @@ int main(int argc, char *argv[])
 	if (option && !strcasecmp(option, "true"))
 		s_info.heap_monitor = 1;
 
+	setenv("BUFMGR_LOCK_TYPE", "once", 0);
+	setenv("BUFMGR_MAP_CACHE", "true", 0);
+
 	critical_log_init(util_basename(argv[0]));
 	event_callback.create = app_create;
 	event_callback.terminate = app_terminate;
