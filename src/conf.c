@@ -77,6 +77,7 @@ HAPI struct conf g_conf = {
 		.conf = "/opt/usr/live/%s/etc/%s.conf",
 		.script = "/opt/usr/live/%s/res/script/%s.edj",
 		.module = "/opt/usr/live/%s/libexec/liblive-%s.so",
+		.input = "/dev/input/event1",
 	},
 
 	.ping_time = 240.0f,
@@ -308,6 +309,14 @@ static void share_path_handler(char *buffer)
 	DbgPrint("Shared folder: %s\n", g_conf.path.image);
 }
 
+static void input_path_handler(char *buffer)
+{
+	g_conf.path.input = strdup(buffer);
+	if (!g_conf.path.input)
+		ErrPrint("Heap: %s\n", strerror(errno));
+	DbgPrint("Input path: %s\n", g_conf.path.input);
+}
+
 static void ping_time_handler(char *buffer)
 {
 	if (sscanf(buffer, "%lf", &g_conf.ping_time) != 1)
@@ -469,6 +478,10 @@ HAPI int conf_loader(void)
 		{
 			.name = "com_core_thread",
 			.handler = com_core_thread_handler,
+		},
+		{
+			.name = "input",
+			.handler = input_path_handler,
 		},
 		{
 			.name = NULL,
