@@ -66,6 +66,7 @@ struct conf {
 		char *always;
 		char *db;
 		char *module;
+		char *input;
 	} path;
 
 	int max_size_type;
@@ -126,6 +127,7 @@ extern int conf_loader(void);
 #define READER_PATH		g_conf.path.reader
 #define ALWAYS_PATH		g_conf.path.always
 #define MODULE_PATH		g_conf.path.module
+#define INPUT_PATH		g_conf.path.input
 
 #define REPLACE_TAG_APPID	g_conf.replace_tag
 #define SLAVE_TTL		g_conf.slave_ttl
