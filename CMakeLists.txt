@@ -38,7 +38,7 @@ ADD_DEFINITIONS("-DPACKAGE=\"${PACKAGE}\"")
 ADD_DEFINITIONS("-DLOCALEDIR=\"${LOCALEDIR}\"")
 ADD_DEFINITIONS("-DEXEC_NAME=\"${PROJECT_NAME}\"")
 
-ADD_DEFINITIONS("-DMASTER_PKGNAME=\"org.tizen.data-provider-master\"")
+ADD_DEFINITIONS("-DMASTER_PKGNAME=\"data-provider-master\"")
 ADD_DEFINITIONS("-DSLAVE_PKGNAME=\"org.tizen.data-provider-slave\"")
 ADD_DEFINITIONS("-DSOCKET_FILE=\"/opt/usr/share/live_magazine/.live.socket\"")
 

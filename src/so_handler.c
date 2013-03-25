@@ -1,5 +1,5 @@
 /*
- * Copyright 2012  Samsung Electronics Co., Ltd
+ * Copyright 2013  Samsung Electronics Co., Ltd
  *
  * Licensed under the Flora License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 #include <provider.h>
 #include <heap-monitor.h>
 #include <livebox-service.h>
+#include <livebox-errno.h>
 
 #include "main.h"
 #include "critical_log.h"
@@ -400,7 +401,7 @@ static inline struct instance *new_instance(const char *id, const char *content,
 {
 	struct instance *inst;
 
-	inst = malloc(sizeof(*inst));
+	inst = calloc(1, sizeof(*inst));
 	if (!inst) {
 		ErrPrint("Heap: %s\n", strerror(errno));
 		return NULL;
@@ -413,6 +414,7 @@ static inline struct instance *new_instance(const char *id, const char *content,
 		return NULL;
 	}
 
+	DbgPrint("Default content: [%s]\n", content);
 	if (content) {
 		inst->content = strdup(content);
 		if (!inst->content) {
@@ -421,8 +423,6 @@ static inline struct instance *new_instance(const char *id, const char *content,
 			free(inst);
 			return NULL;
 		}
-	} else {
-		inst->content = NULL;
 	}
 
 	if (cluster) {
@@ -434,8 +434,6 @@ static inline struct instance *new_instance(const char *id, const char *content,
 			free(inst);
 			return NULL;
 		}
-	} else {
-		inst->cluster = NULL;
 	}
 
 	if (category) {
@@ -448,14 +446,7 @@ static inline struct instance *new_instance(const char *id, const char *content,
 			free(inst);
 			return NULL;
 		}
-	} else {
-		inst->category = NULL;
 	}
-
-	inst->w = 0;
-	inst->h = 0;
-	inst->priority = 0;
-	inst->title = NULL;
 
 	return inst;
 }
@@ -468,7 +459,7 @@ static inline int delete_instance(struct instance *inst)
 	free(inst->content);
 	free(inst->title);
 	free(inst);
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 static inline struct instance *find_instance(struct so_item *item, const char *id)
@@ -506,7 +497,7 @@ HAPI int so_create(const char *pkgname, const char *id, const char *content_info
 		inst = find_instance(item, id);
 		if (inst) {
 			ErrPrint("Instance: %s - %s is already exists\n", pkgname, id);
-			return -EEXIST;
+			return LB_STATUS_ERROR_EXIST;
 		}
 	} else {
 		if (!strcasecmp(abi, "c"))
@@ -514,7 +505,7 @@ HAPI int so_create(const char *pkgname, const char *id, const char *content_info
 		else
 			item = new_adaptor(pkgname, abi);
 		if (!item)
-			return -EFAULT;
+			return LB_STATUS_ERROR_FAULT;
 	}
 
 	inst = new_instance(id, content_info, cluster, category);
@@ -522,7 +513,7 @@ HAPI int so_create(const char *pkgname, const char *id, const char *content_info
 		if (!item->inst_list)
 			delete_livebox(item);
 
-		return -EFAULT;
+		return LB_STATUS_ERROR_FAULT;
 	}
 
 	item->inst_list = eina_list_append(item->inst_list, inst);
@@ -536,7 +527,7 @@ HAPI int so_create(const char *pkgname, const char *id, const char *content_info
 	else if (item->livebox.create)
 		ret = item->livebox.create(util_uri_to_path(id), content_info, cluster, category);
 	else /*! \NOTE: This is not possible, but for the exceptional handling */
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(pkgname, id, __func__, USE_ALARM);
 
@@ -564,7 +555,7 @@ HAPI int so_destroy(struct instance *inst)
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
@@ -573,7 +564,7 @@ HAPI int so_destroy(struct instance *inst)
 	else if (item->livebox.destroy)
 		ret = item->livebox.destroy(util_uri_to_path(inst->id));
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -615,7 +606,7 @@ HAPI int so_is_pinned_up(struct instance *inst)
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 	if (item->adaptor.is_pinned_up)
@@ -623,7 +614,7 @@ HAPI int so_is_pinned_up(struct instance *inst)
 	else if (item->livebox.is_pinned_up)
 		ret = item->livebox.is_pinned_up(util_uri_to_path(inst->id));
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	return ret;
 }
@@ -635,7 +626,7 @@ HAPI int so_is_updated(struct instance *inst)
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
@@ -644,7 +635,7 @@ HAPI int so_is_updated(struct instance *inst)
 	else if (item->livebox.is_updated)
 		ret = item->livebox.is_updated(util_uri_to_path(inst->id));
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -658,7 +649,7 @@ HAPI int so_need_to_destroy(struct instance *inst)
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
@@ -667,7 +658,7 @@ HAPI int so_need_to_destroy(struct instance *inst)
 	else if (item->livebox.need_to_destroy)
 		ret = item->livebox.need_to_destroy(util_uri_to_path(inst->id));
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -681,7 +672,7 @@ HAPI int so_update(struct instance *inst)
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
@@ -690,7 +681,7 @@ HAPI int so_update(struct instance *inst)
 	else if (item->livebox.update_content)
 		ret = item->livebox.update_content(util_uri_to_path(inst->id));
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	return ret;
@@ -703,7 +694,7 @@ HAPI int so_clicked(struct instance *inst, const char *event, double timestamp, 
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
@@ -712,7 +703,7 @@ HAPI int so_clicked(struct instance *inst, const char *event, double timestamp, 
 	else if (item->livebox.clicked)
 		ret = item->livebox.clicked(util_uri_to_path(inst->id), event, timestamp, x, y);
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -726,7 +717,7 @@ HAPI int so_script_event(struct instance *inst, const char *emission, const char
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
@@ -735,7 +726,7 @@ HAPI int so_script_event(struct instance *inst, const char *emission, const char
 	else if (item->livebox.script_event)
 		ret = item->livebox.script_event(util_uri_to_path(inst->id), emission, source, event_info);
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -750,11 +741,11 @@ HAPI int so_resize(struct instance *inst, int w, int h)
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	type = livebox_service_size_type(w, h);
 	if (type == LB_SIZE_TYPE_UNKNOWN)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
@@ -763,7 +754,7 @@ HAPI int so_resize(struct instance *inst, int w, int h)
 	else if (item->livebox.resize)
 		ret = item->livebox.resize(util_uri_to_path(inst->id), type);
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -782,7 +773,7 @@ HAPI int so_create_needed(const char *pkgname, const char *cluster, const char *
 		else
 			item = new_adaptor(pkgname, abi);
 		if (!item)
-			return -EFAULT;
+			return LB_STATUS_ERROR_FAULT;
 	}
 
 	fault_mark_call(item->pkgname, __func__, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
@@ -792,7 +783,7 @@ HAPI int so_create_needed(const char *pkgname, const char *cluster, const char *
 	else if (item->livebox.create_needed)
 		ret = item->livebox.create_needed(cluster, category);
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, __func__, __func__, USE_ALARM);
 
@@ -809,16 +800,16 @@ HAPI int so_change_group(struct instance *inst, const char *cluster, const char 
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	tmp_cluster = strdup(cluster);
 	if (!tmp_cluster)
-		return -ENOMEM;
+		return LB_STATUS_ERROR_MEMORY;
 
 	tmp_category = strdup(category);
 	if (!tmp_category) {
 		free(tmp_cluster);
-		return -ENOMEM;
+		return LB_STATUS_ERROR_MEMORY;
 	}
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
@@ -828,7 +819,7 @@ HAPI int so_change_group(struct instance *inst, const char *cluster, const char 
 	else if (item->livebox.change_group)
 		ret = item->livebox.change_group(util_uri_to_path(inst->id), cluster, category);
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	if (ret >= 0) {
@@ -852,7 +843,7 @@ HAPI int so_get_output_info(struct instance *inst, int *w, int *h, double *prior
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	*content = NULL;
 	*title = NULL;
@@ -864,7 +855,7 @@ HAPI int so_get_output_info(struct instance *inst, int *w, int *h, double *prior
 	else if (item->livebox.get_output_info)
 		ret = item->livebox.get_output_info(util_uri_to_path(inst->id), w, h, priority, content, title);
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	if (ret >= 0) {
@@ -902,7 +893,7 @@ HAPI int so_sys_event(struct instance *inst, int event)
 
 	item = inst->item;
 	if (!item)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 	if (item->adaptor.sys_event)
@@ -910,7 +901,7 @@ HAPI int so_sys_event(struct instance *inst, int event)
 	else if (item->livebox.sys_event)
 		ret = item->livebox.sys_event(util_uri_to_path(inst->id), event);
 	else
-		ret = -ENOSYS;
+		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	return ret;

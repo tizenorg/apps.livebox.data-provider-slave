@@ -1,5 +1,5 @@
 /*
- * Copyright 2012  Samsung Electronics Co., Ltd
+ * Copyright 2013  Samsung Electronics Co., Ltd
  *
  * Licensed under the Flora License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,12 @@
 #include <dlfcn.h>
 #include <pthread.h>
 
-#include <dlog.h>
-#include <aul.h>
-
 #include <Eina.h>
 #include <Ecore.h>
+
+#include <dlog.h>
+#include <aul.h>
+#include <livebox-errno.h>
 
 #include "critical_log.h"
 #include "util.h"
@@ -54,12 +55,12 @@ HAPI int util_get_filesize(const char *filename)
 
 	if (stat(filename, &buf) < 0) {
 		ErrPrint("error: %s\n", strerror(errno));
-		return -EIO;
+		return LB_STATUS_ERROR_IO;
 	}
 
 	if (!S_ISREG(buf.st_mode)) {
 		ErrPrint("%s is not a file\n", filename);
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 	}
 
 	return buf.st_size;

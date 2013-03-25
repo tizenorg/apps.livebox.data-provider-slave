@@ -20,3 +20,4 @@ org.tizen.data-provider-slave pulseaudio rwxat
 org.tizen.data-provider-slave pkgmgr::db rw
 e17 org.tizen.data-provider-slave w
 org.tizen.app-tray org.tizen.data-provider-slave rx
+dbus org.tizen.data-provider-slave rwx

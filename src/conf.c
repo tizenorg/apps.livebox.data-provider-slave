@@ -1,5 +1,5 @@
 /*
- * Copyright 2012  Samsung Electronics Co., Ltd
+ * Copyright 2013  Samsung Electronics Co., Ltd
  *
  * Licensed under the Flora License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@
 
 #include <dlog.h>
 #include <Eina.h>
+
+#include <livebox-errno.h>
 
 #include "conf.h"
 #include "util.h"
@@ -494,7 +496,7 @@ HAPI int conf_loader(void)
 	fp = fopen("/usr/share/data-provider-master/conf.ini", "rt");
 	if (!fp) {
 		ErrPrint("Error: %s\n", strerror(errno));
-		return -EIO;
+		return LB_STATUS_ERROR_IO;
 	}
 
 	state = START;
@@ -652,7 +654,7 @@ HAPI int conf_loader(void)
 	 } while (c != EOF);
 
 	fclose(fp);
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 /* End of a file */

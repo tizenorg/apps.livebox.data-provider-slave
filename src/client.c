@@ -1,5 +1,5 @@
 /*
- * Copyright 2012  Samsung Electronics Co., Ltd
+ * Copyright 2013  Samsung Electronics Co., Ltd
  *
  * Licensed under the Flora License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@
 #include <sqlite3.h>
 
 #include <provider.h>
+#include <livebox-errno.h>
 
 #include "critical_log.h"
 #include "conf.h"
@@ -75,14 +76,17 @@ static int method_new(struct event_arg *arg, int *width, int *height, double *pr
 
 	if (ret == 0) {
 		if (arg->info.lb_create.width > 0 && arg->info.lb_create.height > 0) {
+			DbgPrint("Create size: %dx%d (created: %dx%d)\n", arg->info.lb_create.width, arg->info.lb_create.height, *width, *height);
 			if (*width != arg->info.lb_create.width || *height != arg->info.lb_create.height) {
 				int tmp;
 				tmp = lb_resize(arg->pkgname, arg->id, arg->info.lb_create.width, arg->info.lb_create.height);
-				DbgPrint("Resize[%dx%d] returns: %d\n", arg->info.lb_create.width, arg->info.lb_create.height, tmp);
+				DbgPrint("lb_resize returns: %d\n", tmp);
 			}
 		}
 
 		arg->info.lb_create.out_is_pinned_up = (lb_is_pinned_up(arg->pkgname, arg->id) == 1);
+	} else {
+		ErrPrint("lb_create returns %d\n", ret);
 	}
 
 	return ret;
@@ -127,6 +131,8 @@ static int method_renew(struct event_arg *arg, void *data)
 		}
 
 		arg->info.lb_recreate.out_is_pinned_up = (lb_is_pinned_up(arg->pkgname, arg->id) == 1);
+	} else {
+		ErrPrint("lb_create returns %d\n", ret);
 	}
 
 	return ret;
@@ -213,7 +219,7 @@ static int method_pinup(struct event_arg *arg, void *data)
 {
 	DbgPrint("pkgname[%s] id[%s] state[%d]\n", arg->pkgname, arg->id, arg->info.pinup.state);
 	arg->info.pinup.content_info = lb_pinup(arg->pkgname, arg->id, arg->info.pinup.state);
-	return arg->info.pinup.content_info ? 0 : -ENOTSUP;
+	return arg->info.pinup.content_info ? LB_STATUS_SUCCESS : LB_STATUS_ERROR_NOT_IMPLEMENTED;
 }
 
 static int method_update_content(struct event_arg *arg, void *data)
@@ -239,7 +245,7 @@ static int method_pause(struct event_arg *arg, void *data)
 
 	sqlite3_release_memory(SQLITE_FLUSH_MAX);
 	malloc_trim(0);
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 static int method_resume(struct event_arg *arg, void *data)
@@ -247,7 +253,7 @@ static int method_resume(struct event_arg *arg, void *data)
 	lb_resume_all();
 	if (s_info.ping_timer)
 		ecore_timer_thaw(s_info.ping_timer);
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 static Eina_Bool send_ping_cb(void *data)
@@ -264,7 +270,7 @@ static int method_disconnected(struct event_arg *arg, void *data)
 	}
 
 	elm_exit();
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 static int method_connected(struct event_arg *arg, void *data)
@@ -277,7 +283,7 @@ static int method_connected(struct event_arg *arg, void *data)
 			ErrPrint("Failed to add a ping timer\n");
 	}
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 static int method_pd_created(struct event_arg *arg, void *data)
@@ -287,7 +293,7 @@ static int method_pd_created(struct event_arg *arg, void *data)
 	ret = lb_open_pd(arg->pkgname);
 	DbgPrint("%s Open PD: %d\n", arg->pkgname, ret);
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 static int method_pd_destroyed(struct event_arg *arg, void *data)
@@ -297,10 +303,10 @@ static int method_pd_destroyed(struct event_arg *arg, void *data)
 	ret = lb_close_pd(arg->pkgname);
 	DbgPrint("%s Close PD: %d\n", arg->pkgname, ret);
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
-static int method_pd_move(struct event_arg *arg, void *data)
+static int method_pd_moved(struct event_arg *arg, void *data)
 {
 	int ret;
 	struct event_info info;
@@ -345,7 +351,7 @@ HAPI int client_init(const char *name)
 		.connected = method_connected,
 		.pd_create = method_pd_created,
 		.pd_destroy = method_pd_destroyed,
-		.pd_move = method_pd_move,
+		.pd_move = method_pd_moved,
 		.lb_pause = method_lb_pause,
 		.lb_resume = method_lb_resume,
 		.pd_access = NULL,
@@ -358,7 +364,7 @@ HAPI int client_init(const char *name)
 HAPI int client_fini(void)
 {
 	(void)provider_fini();
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 /* End of a file */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012  Samsung Electronics Co., Ltd
+ * Copyright 2013  Samsung Electronics Co., Ltd
  *
  * Licensed under the Flora License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,7 +160,7 @@ extern int conf_loader(void);
 #define PACKAGE "data-provider-slave"
 #endif
 
-#define DATA_MASTER "org.tizen.data-provider-master"
+#define DATA_MASTER "data-provider-master"
 
 #define DEFAULT_LIFE_TIMER	20
 #define DEFAULT_LOAD_TIMER	20

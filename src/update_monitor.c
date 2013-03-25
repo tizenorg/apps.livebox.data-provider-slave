@@ -1,5 +1,5 @@
 /*
- * Copyright 2012  Samsung Electronics Co., Ltd
+ * Copyright 2013  Samsung Electronics Co., Ltd
  *
  * Licensed under the Flora License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 #include <Eina.h>
 
 #include <dlog.h>
+#include <livebox-errno.h>
 
 #include "critical_log.h"
 #include "update_monitor.h"
@@ -156,12 +157,12 @@ HAPI int update_monitor_init(void)
 	s_info.ifd = inotify_init();
 	if (s_info.ifd < 0) {
 		ErrPrint("Error: %s\n", strerror(errno));
-		return -EIO;
+		return LB_STATUS_ERROR_IO;
 	}
 
 	if (access(IMAGE_PATH, R_OK | X_OK) != 0) {
 		ErrPrint("Image folder is not exists\n");
-		return -EIO;
+		return LB_STATUS_ERROR_IO;
 	}
 
 	s_info.iwd = inotify_add_watch(s_info.ifd, IMAGE_PATH,
@@ -170,8 +171,8 @@ HAPI int update_monitor_init(void)
 	if (s_info.iwd < 0) {
 		ErrPrint("Error: %s\n", strerror(errno));
 		close(s_info.ifd);
-		s_info.ifd = -EINVAL;
-		return -EIO;
+		s_info.ifd = LB_STATUS_ERROR_INVALID;
+		return LB_STATUS_ERROR_IO;
 	}
 
 	s_info.handler = ecore_main_fd_handler_add(s_info.ifd,
@@ -183,12 +184,12 @@ HAPI int update_monitor_init(void)
 		s_info.iwd = -EINVAL;
 
 		close(s_info.ifd);
-		s_info.ifd = -EINVAL;
-		return -EFAULT;
+		s_info.ifd = LB_STATUS_ERROR_INVALID;
+		return LB_STATUS_ERROR_FAULT;
 	}
 
 	DbgPrint("Update monitor is successfully initialized\n");
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int update_monitor_fini(void)
@@ -204,13 +205,13 @@ HAPI int update_monitor_fini(void)
 		if (inotify_rm_watch(s_info.ifd, s_info.iwd) < 0)
 			ErrPrint("inotify_rm_watch:%s", strerror(errno));
 
-		s_info.iwd = -EINVAL;
+		s_info.iwd = LB_STATUS_ERROR_INVALID;
 
 		close(s_info.ifd);
-		s_info.ifd = -EINVAL;
+		s_info.ifd = LB_STATUS_ERROR_INVALID;
 	}
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int update_monitor_add_update_cb(const char *filename,
@@ -221,20 +222,20 @@ HAPI int update_monitor_add_update_cb(const char *filename,
 	item = calloc(1, sizeof(*item));
 	if (!item) {
 		ErrPrint("calloc:%s\n", strerror(errno));
-		return -ENOMEM;
+		return LB_STATUS_ERROR_MEMORY;
 	}
 
 	item->filename = strdup(filename);
 	if (!item->filename) {
 		ErrPrint("Error: %s\n", strerror(errno));
 		free(item);
-		return -ENOMEM;
+		return LB_STATUS_ERROR_MEMORY;
 	}
 	item->cb = cb;
 	item->data = data;
 
 	s_info.update_list = eina_list_append(s_info.update_list, item);
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int update_monitor_add_delete_cb(const char *filename,
@@ -245,21 +246,21 @@ HAPI int update_monitor_add_delete_cb(const char *filename,
 	item = calloc(1, sizeof(*item));
 	if (!item) {
 		ErrPrint("calloc:%s", strerror(errno));
-		return -ENOMEM;
+		return LB_STATUS_ERROR_MEMORY;
 	}
 
 	item->filename = strdup(filename);
 	if (!item->filename) {
 		ErrPrint("Error: %s\n", strerror(errno));
 		free(item);
-		return -ENOMEM;
+		return LB_STATUS_ERROR_MEMORY;
 	}
 
 	item->cb = cb;
 	item->data = data;
 
 	s_info.delete_list = eina_list_append(s_info.delete_list, item);
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI void *update_monitor_del_update_cb(const char *filename,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012  Samsung Electronics Co., Ltd
+ * Copyright 2013  Samsung Electronics Co., Ltd
  *
  * Licensed under the Flora License, Version 1.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include <dlog.h>
 #include <provider.h>
 #include <livebox.h>
+#include <livebox-errno.h>
 
 #include "critical_log.h"
 #include "debug.h"
@@ -183,7 +184,7 @@ static inline __attribute__((always_inline)) int activate_pending_consumer(void)
 	s_info.pending_timer = ecore_timer_add(0.000001f, pended_cmd_consumer_cb, NULL);
 	if (!s_info.pending_timer) {
 		ErrPrint("Failed to add a new pended command consumer\n");
-		return -EFAULT;
+		return LB_STATUS_ERROR_FAULT;
 	}
 
 	/*!
@@ -227,7 +228,7 @@ static inline int __attribute__((always_inline)) activate_pd_open_pending_consum
 	s_info.pd_open_pending_timer = ecore_timer_add(0.000001f, pd_open_pended_cmd_consumer_cb, NULL);
 	if (!s_info.pd_open_pending_timer) {
 		ErrPrint("Failed to add a new pended command consumer\n");
-		return -EFAULT;
+		return LB_STATUS_ERROR_FAULT;
 	}
 
 	return 0;
@@ -288,21 +289,21 @@ static inline int append_pending_list(struct item *item)
 	if (pd_is_opened(item->inst->item->pkgname) == 1) {
 		if (eina_list_data_find(s_info.pd_open_pending_list, item) == item) {
 			DbgPrint("Already pended - %s\n", item->inst->item->pkgname);
-			return -EEXIST;
+			return LB_STATUS_ERROR_EXIST;
 		}
 
 		if (activate_pd_open_pending_consumer() < 0)
-			return -EFAULT;
+			return LB_STATUS_ERROR_FAULT;
 
 		s_info.pd_open_pending_list = eina_list_append(s_info.pd_open_pending_list, item);
 	} else {
 		if (eina_list_data_find(s_info.pending_list, item) == item) {
 			DbgPrint("Already pended - %s\n", item->inst->item->pkgname);
-			return -EEXIST;
+			return LB_STATUS_ERROR_EXIST;
 		}
 
 		if (activate_pending_consumer() < 0)
-			return -EFAULT;
+			return LB_STATUS_ERROR_FAULT;
 
 		s_info.pending_list = eina_list_append(s_info.pending_list, item);
 	}
@@ -443,8 +444,8 @@ static int file_updated_cb(const char *filename, void *data, int over)
 	int w;
 	int h;
 	double priority;
-	char *content;
-	char *title;
+	char *content = NULL;
+	char *title = NULL;
 	int ret;
 
 	if (over)
@@ -453,10 +454,17 @@ static int file_updated_cb(const char *filename, void *data, int over)
 	item = data;
 
 	ret = util_get_filesize(filename);
-	if (ret <= 0)
-		ErrPrint("Content is updated. but invalid. ret = %d\n", ret);
+	if (ret <= 0) {
+		ErrPrint("Content is updated. but invalid. ret = %d (Update is ignored)\n", ret);
+		return EXIT_SUCCESS; /*!< To keep the callback */
+	}
 
-	(void)so_get_output_info(item->inst, &w, &h, &priority, &content, &title);
+	ret = so_get_output_info(item->inst, &w, &h, &priority, &content, &title);
+	if (ret < 0) {
+		ErrPrint("livebox_get_info returns %d\n", ret);
+		return EXIT_SUCCESS; /*!< To keep the callback */
+	}
+
 	provider_send_updated(item->inst->item->pkgname, item->inst->id,
 					item->inst->w, item->inst->h, item->inst->priority, content, title);
 
@@ -475,10 +483,10 @@ static inline int clear_from_pd_open_pending_list(struct item *item)
 		s_info.pd_open_pending_list = eina_list_remove_list(s_info.pd_open_pending_list, l);
 		if (!s_info.pd_open_pending_list)
 			deactivate_pd_open_pending_consumer();
-		return 0;
+		return LB_STATUS_SUCCESS;
 	}
 
-	return -ENOENT;
+	return LB_STATUS_ERROR_NOT_EXIST;
 }
 
 static inline int clear_from_pending_list(struct item *item)
@@ -493,10 +501,10 @@ static inline int clear_from_pending_list(struct item *item)
 		s_info.pending_list = eina_list_remove_list(s_info.pending_list, l);
 		if (!s_info.pending_list)
 			deactivate_pending_consumer();
-		return 0;
+		return LB_STATUS_SUCCESS;
 	}
 
-	return -ENOENT;
+	return LB_STATUS_ERROR_NOT_EXIST;
 }
 
 static Eina_Bool update_timeout_cb(void *data)
@@ -593,65 +601,69 @@ static Eina_Bool updator_cb(void *data)
 	return ECORE_CALLBACK_RENEW;
 }
 
-static inline void update_monitor_del(struct item *item)
+static inline void update_monitor_del(const char *id, struct item *item)
 {
 	char *tmp;
 	int len;
 
-	update_monitor_del_update_cb(util_uri_to_path(item->inst->id), file_updated_cb);
+	update_monitor_del_update_cb(util_uri_to_path(id), file_updated_cb);
 
-	len = strlen(util_uri_to_path(item->inst->id)) + strlen(".desc") + 1;
+	len = strlen(util_uri_to_path(id)) + strlen(".desc") + 1;
 	tmp = malloc(len);
 	if (!tmp) {
-		ErrPrint("Heap: %s (%s.desc)\n", strerror(errno), util_uri_to_path(item->inst->id));
+		ErrPrint("Heap: %s (%s.desc)\n", strerror(errno), util_uri_to_path(id));
 		return;
 	}
 
-	snprintf(tmp, len, "%s.desc", util_uri_to_path(item->inst->id));
+	snprintf(tmp, len, "%s.desc", util_uri_to_path(id));
 	update_monitor_del_update_cb(tmp, desc_updated_cb);
 	free(tmp);
 }
 
-static inline int add_desc_update_monitor(struct item *item)
+static inline int add_desc_update_monitor(const char *id, struct item *item)
 {
 	char *filename;
 	int len;
 
-	len = strlen(util_uri_to_path(item->inst->id)) + strlen(".desc") + 1;
+	len = strlen(util_uri_to_path(id)) + strlen(".desc") + 1;
 	filename = malloc(len);
 	if (!filename) {
-		ErrPrint("Heap: %s (%s.desc)\n", strerror(errno), util_uri_to_path(item->inst->id));
-		return -ENOMEM;
+		ErrPrint("Heap: %s (%s.desc)\n", strerror(errno), util_uri_to_path(id));
+		return LB_STATUS_ERROR_MEMORY;
 	}
 
-	snprintf(filename, len, "%s.desc", util_uri_to_path(item->inst->id));
+	snprintf(filename, len, "%s.desc", util_uri_to_path(id));
 	DbgPrint("Add DESC monitor: %s\n", filename);
 	return update_monitor_add_update_cb(filename, desc_updated_cb, item);
 }
 
-static inline int add_file_update_monitor(struct item *item)
+static inline int add_file_update_monitor(const char *id, struct item *item)
 {
 	char *filename;
 
-	filename = strdup(util_uri_to_path(item->inst->id));
+	filename = strdup(util_uri_to_path(id));
 	if (!filename) {
-		ErrPrint("Heap: %s (%s)\n", strerror(errno), item->inst->id);
-		return -ENOMEM;
+		ErrPrint("Heap: %s (%s)\n", strerror(errno), id);
+		return LB_STATUS_ERROR_MEMORY;
 	}
 
 	return update_monitor_add_update_cb(filename, file_updated_cb, item);
 }
 
-static inline int update_monitor_add(struct item *item)
+static inline int update_monitor_add(const char *id, struct item *item)
 {
-	add_file_update_monitor(item);
-	add_desc_update_monitor(item);
-	return 0;
+	/*!
+	 * \NOTE
+	 * item->inst is not available yet.
+	 */
+	add_file_update_monitor(id, item);
+	add_desc_update_monitor(id, item);
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_init(void)
 {
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_fini(void)
@@ -671,7 +683,7 @@ HAPI int lb_fini(void)
 		lb_destroy(item->inst->item->pkgname, item->inst->id);
 	}
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 /*!
@@ -702,7 +714,7 @@ int livebox_request_update_by_id(const char *filename)
 		}
 	}
 
-	return -ENOENT;
+	return LB_STATUS_ERROR_NOT_EXIST;
 }
 
 HAPI int lb_open_pd(const char *pkgname)
@@ -718,7 +730,7 @@ HAPI int lb_open_pd(const char *pkgname)
 	tmp = strdup(pkgname);
 	if (!tmp) {
 		ErrPrint("Heap: %s\n", strerror(errno));
-		return -ENOMEM;
+		return LB_STATUS_ERROR_MEMORY;
 	}
 
 	if (!s_info.pd_list)
@@ -731,7 +743,7 @@ HAPI int lb_open_pd(const char *pkgname)
 	 * Move them to pd_open_pending_timer
 	 */
 	migrate_to_pd_open_pending_list(pkgname);
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_close_pd(const char *pkgname)
@@ -755,10 +767,10 @@ HAPI int lb_close_pd(const char *pkgname)
 		 * to pending_list.
 		 */
 		migrate_to_pending_list(pkgname);
-		return 0;
+		return LB_STATUS_SUCCESS;
 	}
 
-	return -ENOENT;
+	return LB_STATUS_ERROR_NOT_EXIST;
 }
 
 HAPI int lb_create(const char *pkgname, const char *id, const char *content_info, int timeout, int has_livebox_script, double period, const char *cluster, const char *category, int *w, int *h, double *priority, int skip_need_to_create, const char *abi, char **out_content, char **out_title)
@@ -776,33 +788,33 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 	inst = so_find_instance(pkgname, id);
 	if (inst) {
 		DbgPrint("Instance is already exists [%s - %s] content[%s], cluster[%s], category[%s], abi[%s]\n", pkgname, id, content_info, cluster, category, abi);
-		return 0;
+		return LB_STATUS_SUCCESS;
 	}
 
 	if (!skip_need_to_create) {
 		ret = so_create_needed(pkgname, cluster, category, abi);
 		if (ret != NEED_TO_CREATE)
-			return -EPERM;
+			return LB_STATUS_ERROR_PERMISSION;
 
 		need_to_create = 1;
 	}
 
-	item = malloc(sizeof(*item));
+	item = calloc(1, sizeof(*item));
 	if (!item) {
 		ErrPrint("Heap: %s (%s - %s, content[%s], cluster[%s], category[%s], abi[%s])\n", strerror(errno), pkgname, id, content_info, cluster, category, abi);
-		return -ENOMEM;
+		return LB_STATUS_ERROR_MEMORY;
 	}
 
-	item->monitor = NULL;
-	item->monitor_cnt = 0;
-	item->deleteme = 0;
-	item->update_interval = 0.0f;
-	item->heavy_updating = 0;
-	item->is_paused = 0;
-	item->sleep_at = 0.0f;
+	ret = update_monitor_add(id, item);
+	if (ret < 0) {
+		free(item);
+		return ret;
+	}
 
+	DbgPrint("Content: [%s]\n", content_info);
 	create_ret = so_create(pkgname, id, content_info, timeout, has_livebox_script, cluster, category, abi, &inst);
 	if (create_ret < 0) {
+		update_monitor_del(id,  item);
 		free(item);
 
 		*w = 0;
@@ -817,9 +829,10 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 		item->timer = util_timer_add(period, updator_cb, item);
 		if (!item->timer) {
 			ErrPrint("Failed to add timer (%s - %s, content[%s], cluster[%s], category[%s], abi[%s]\n", pkgname, id, content_info, cluster, category, abi);
+			update_monitor_del(id, item);
 			so_destroy(inst);
 			free(item);
-			return -EFAULT;
+			return LB_STATUS_ERROR_FAULT;
 		}
 
 		if (s_info.paused)
@@ -827,15 +840,6 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 	} else {
 		DbgPrint("Local update timer is disabled: %lf (%d)\n", period, s_info.secured);
 		item->timer = NULL;
-	}
-
-	ret = update_monitor_add(item);
-	if (ret < 0) {
-		so_destroy(inst);
-		if (item->timer)
-			ecore_timer_del(item->timer);
-		free(item);
-		return ret;
 	}
 
 	s_info.item_list = eina_list_append(s_info.item_list, item);
@@ -846,9 +850,6 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 	}
 
 	if (create_ret & OUTPUT_UPDATED) {
-		char *tmp_content;
-		char *tmp_title;
-
 		update_monitor_cnt(item);
 		/*!
 		 * \note
@@ -859,22 +860,26 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 		 * even if it has no updates on the content, title,
 		 * it will set them to NULL.
 		 */
-		(void)so_get_output_info(inst, w, h, priority, &tmp_content, &tmp_title);
+		if (so_get_output_info(inst, w, h, priority, out_content, out_title) == LB_STATUS_SUCCESS) {
+			if (*out_content) {
+				char *tmp;
 
-		/*!
-		 * \note
-		 * These two values will be released by the provider library.
-		 */
-		if (tmp_content) {
-			*out_content = strdup(tmp_content);
-			if (!*out_content)
-				ErrPrint("Heap: %s\n", strerror(errno));
-		}
+				tmp = strdup(*out_content);
+				if (!tmp)
+					ErrPrint("Memory: %s\n", strerror(errno));
 
-		if (tmp_title) {
-			*out_title = strdup(tmp_title);
-			if (!*out_title)
-				ErrPrint("Heap: %s\n", strerror(errno));
+				*out_content = tmp;
+			}
+
+			if (*out_title) {
+				char *tmp;
+
+				tmp = strdup(*out_title);
+				if (!tmp)
+					ErrPrint("Memory: %s\n", strerror(errno));
+
+				*out_title = tmp;
+			}
 		}
 	}
 
@@ -893,13 +898,13 @@ HAPI int lb_destroy(const char *pkgname, const char *id)
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
 		ErrPrint("Instance %s - %s is not created\n", pkgname, id);
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 	}
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found (%s - %s)\n", pkgname, id);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
@@ -917,7 +922,7 @@ HAPI int lb_destroy(const char *pkgname, const char *id)
 		if (item->monitor)
 			item->deleteme = 1;
 		else
-			update_monitor_del(item);
+			update_monitor_del(id, item);
 	}
 
 	if (!item->monitor) {
@@ -925,7 +930,7 @@ HAPI int lb_destroy(const char *pkgname, const char *id)
 		(void)so_destroy(inst);
 	}
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_resize(const char *pkgname, const char *id, int w, int h)
@@ -938,13 +943,13 @@ HAPI int lb_resize(const char *pkgname, const char *id, int w, int h)
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
 		ErrPrint("Instance %s - %s is not created (%dx%d)\n", pkgname, id, w, h);
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 	}
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found (%s - %s, %dx%d)\n", pkgname, id, w, h);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
@@ -961,7 +966,7 @@ HAPI int lb_resize(const char *pkgname, const char *id, int w, int h)
 	if (ret & OUTPUT_UPDATED)
 		update_monitor_cnt(item);
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI char *lb_pinup(const char *pkgname, const char *id, int pinup)
@@ -988,13 +993,13 @@ HAPI int lb_set_period(const char *pkgname, const char *id, double period)
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
 		ErrPrint("Instance %s - %s is not found (period[%lf])\n", pkgname, id, period);
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 	}
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found (%s - %s, period[%lf])\n", pkgname, id, period);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
@@ -1011,7 +1016,7 @@ HAPI int lb_set_period(const char *pkgname, const char *id, double period)
 			item->timer = util_timer_add(period, updator_cb, item);
 			if (!item->timer) {
 				ErrPrint("Failed to add timer (%s - %s)\n", pkgname, id);
-				return -EFAULT;
+				return LB_STATUS_ERROR_FAULT;
 			}
 
 			if (s_info.paused)
@@ -1019,7 +1024,7 @@ HAPI int lb_set_period(const char *pkgname, const char *id, double period)
 		}
 	}
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_clicked(const char *pkgname, const char *id, const char *event, double timestamp, double x, double y)
@@ -1032,13 +1037,13 @@ HAPI int lb_clicked(const char *pkgname, const char *id, const char *event, doub
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
 		ErrPrint("Instance %s - %s is not exists (event[%s])\n", pkgname, id, event);
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 	}
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found (%s - %s, event[%s])\n", pkgname, id, event);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
@@ -1055,7 +1060,7 @@ HAPI int lb_clicked(const char *pkgname, const char *id, const char *event, doub
 	if (ret & OUTPUT_UPDATED)
 		update_monitor_cnt(item);
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_script_event(const char *pkgname, const char *id, const char *emission, const char *source, struct event_info *event_info)
@@ -1068,13 +1073,13 @@ HAPI int lb_script_event(const char *pkgname, const char *id, const char *emissi
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
 		ErrPrint("Instance %s - %s is not exists (emission[%s], source[%s])\n", pkgname, id, emission, source);
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 	}
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found (%s - %s, emissino[%s], source[%s])\n", pkgname, id, emission, source);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
@@ -1091,7 +1096,7 @@ HAPI int lb_script_event(const char *pkgname, const char *id, const char *emissi
 	if (ret & OUTPUT_UPDATED)
 		update_monitor_cnt(item);
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_is_pinned_up(const char *pkgname, const char *id)
@@ -1103,19 +1108,19 @@ HAPI int lb_is_pinned_up(const char *pkgname, const char *id)
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
 		ErrPrint("Instance %s - %s is not created\n", pkgname, id);
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 	}
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found(%s - %s)\n", pkgname, id);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
 	if (!item) {
 		ErrPrint("Invalid item(%s - %s)\n", pkgname, id);
-		return -EFAULT;
+		return LB_STATUS_ERROR_FAULT;
 	}
 	/*!
 	 * NOTE:
@@ -1135,13 +1140,13 @@ HAPI int lb_change_group(const char *pkgname, const char *id, const char *cluste
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
 		ErrPrint("Instance %s - %s is not created (cluster[%s], category[%s])\n", pkgname, id, cluster, category);
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 	}
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found(%s - %s, cluster[%s], category[%s])\n", pkgname, id, cluster, category);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
@@ -1158,7 +1163,7 @@ HAPI int lb_change_group(const char *pkgname, const char *id, const char *cluste
 	if (ret & OUTPUT_UPDATED)
 		update_monitor_cnt(item);
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 static inline int lb_sys_event(struct instance *inst, struct item *item, int event)
@@ -1175,7 +1180,7 @@ static inline int lb_sys_event(struct instance *inst, struct item *item, int eve
 	if (ret & OUTPUT_UPDATED)
 		update_monitor_cnt(item);
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_system_event(const char *pkgname, const char *id, int event)
@@ -1187,13 +1192,13 @@ HAPI int lb_system_event(const char *pkgname, const char *id, int event)
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
 		ErrPrint("instance %s - %s is not created\n");
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 	}
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found(%s - %s)\n", pkgname, id);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
@@ -1209,18 +1214,18 @@ HAPI int lb_update(const char *pkgname, const char *id)
 	inst = so_find_instance(pkgname, id);
 	if (!inst) {
 		ErrPrint("Instance %s - %s is not created\n", pkgname, id);
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 	}
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found(%s - %s)\n", pkgname, id);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
 	(void)append_pending_list(item);
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_update_all(const char *pkgname, const char *cluster, const char *category)
@@ -1249,7 +1254,7 @@ HAPI int lb_update_all(const char *pkgname, const char *cluster, const char *cat
 		}
 	}
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_system_event_all(int event)
@@ -1266,7 +1271,7 @@ HAPI int lb_system_event_all(int event)
 		lb_sys_event(item->inst, item, event);
 	}
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI void lb_pause_all(void)
@@ -1337,28 +1342,28 @@ HAPI int lb_pause(const char *pkgname, const char *id)
 
 	inst = so_find_instance(pkgname, id);
 	if (!inst)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found (%s - %s)\n", pkgname, id);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
 	if (!item)
-		return -EFAULT;
+		return LB_STATUS_ERROR_FAULT;
 
 	if (item->deleteme) {
 		DbgPrint("Instance %s will be deleted (%s)\n", item->inst->item->pkgname, item->inst->id);
-		return -EBUSY;
+		return LB_STATUS_ERROR_BUSY;
 	}
 
 	item->is_paused = 1;
 
 	if (s_info.paused) {
 		DbgPrint("Already paused: %s\n", item->inst->id);
-		return 0;
+		return LB_STATUS_SUCCESS;
 	}
 
 	if (item->timer)
@@ -1366,7 +1371,7 @@ HAPI int lb_pause(const char *pkgname, const char *id)
 
 	lb_sys_event(inst, item, LB_SYS_EVENT_PAUSED);
 
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI int lb_resume(const char *pkgname, const char *id)
@@ -1377,35 +1382,35 @@ HAPI int lb_resume(const char *pkgname, const char *id)
 
 	inst = so_find_instance(pkgname, id);
 	if (!inst)
-		return -EINVAL;
+		return LB_STATUS_ERROR_INVALID;
 
 	l = find_item(inst);
 	if (!l) {
 		ErrPrint("Instance is not found (%s - %s)\n", pkgname, id);
-		return -ENOENT;
+		return LB_STATUS_ERROR_NOT_EXIST;
 	}
 
 	item = eina_list_data_get(l);
 	if (!item)
-		return -EFAULT;
+		return LB_STATUS_ERROR_FAULT;
 
 	if (item->deleteme) {
 		DbgPrint("Instance %s will be deleted (%s)\n", item->inst->item->pkgname, item->inst->id);
-		return -EBUSY;
+		return LB_STATUS_ERROR_BUSY;
 	}
 
 	item->is_paused = 0;
 
 	if (s_info.paused) {
 		DbgPrint("Instance %s is still paused\n", item->inst->id);
-		return 0;
+		return LB_STATUS_SUCCESS;
 	}
 
 	if (item->timer)
 		timer_thaw(item);
 
 	lb_sys_event(inst, item, LB_SYS_EVENT_RESUMED);
-	return 0;
+	return LB_STATUS_SUCCESS;
 }
 
 HAPI void lb_turn_secured_on(void)

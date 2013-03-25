@@ -2,9 +2,9 @@
 
 Name: org.tizen.data-provider-slave
 Summary: Plugin type livebox service provider.
-Version: 0.10.0
+Version: 0.10.2
 Release: 1
-Group: frameowrk/livebox
+Group: HomeTF/Livebox
 License: Flora License
 Source0: %{name}-%{version}.tar.gz
 BuildRequires: cmake, gettext-tools, coreutils
@@ -33,6 +33,7 @@ BuildRequires: pkgconfig(elementary)
 %description
 Plugin type liveboxes are managed by this.
 Supporting the EFL.
+Supporting the In-house livebox only.
 
 %prep
 %setup -q
