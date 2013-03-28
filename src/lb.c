@@ -112,8 +112,10 @@ static inline int pd_is_opened(const char *pkgname)
 
 	i = 0;
 	EINA_LIST_FOREACH(s_info.pd_list, l, tmp) {
-		if (pkgname && !strcmp(pkgname, tmp))
+		if (pkgname && !strcmp(pkgname, tmp)) {
+			DbgPrint("PD(%s) is opened\n", pkgname);
 			return 1;
+		}
 
 		i++;
 	}
@@ -250,8 +252,10 @@ static inline void migrate_to_pd_open_pending_list(const char *pkgname)
 		cnt++;
 	}
 
-	if (s_info.pd_open_pending_list)
+	if (s_info.pd_open_pending_list) {
+		DbgPrint("Activate PD open pending consumer (%s)\n", pkgname);
 		activate_pd_open_pending_consumer();
+	}
 
 	if (!s_info.pending_list)
 		deactivate_pending_consumer();
@@ -292,8 +296,11 @@ static inline int append_pending_list(struct item *item)
 			return LB_STATUS_ERROR_EXIST;
 		}
 
-		if (activate_pd_open_pending_consumer() < 0)
+		DbgPrint("Activate PD open pending consumer (%s)\n", item->inst->item->pkgname);
+		if (activate_pd_open_pending_consumer() < 0) {
+			ErrPrint("Failed to activate PD open pending consumer\n");
 			return LB_STATUS_ERROR_FAULT;
+		}
 
 		s_info.pd_open_pending_list = eina_list_append(s_info.pd_open_pending_list, item);
 	} else {
