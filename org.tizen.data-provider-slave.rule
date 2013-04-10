@@ -11,7 +11,7 @@ org.tizen.data-provider-slave xorg w
 org.tizen.data-provider-slave isf rwx
 org.tizen.data-provider-slave dbus wx
 org.tizen.data-provider-slave data-provider-master::data rx
-org.tizen.data-provider-slave data-provider-master::share rwxt
+org.tizen.data-provider-slave data-provider-master::share rwxat
 org.tizen.data-provider-slave data-provider-master::db rw
 org.tizen.data-provider-slave data-provider-master rw
 org.tizen.data-provider-slave e17 rx

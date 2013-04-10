@@ -81,6 +81,16 @@ static int method_new(struct event_arg *arg, int *width, int *height, double *pr
 				int tmp;
 				tmp = lb_resize(arg->pkgname, arg->id, arg->info.lb_create.width, arg->info.lb_create.height);
 				DbgPrint("lb_resize returns: %d\n", tmp);
+				if (tmp == LB_STATUS_SUCCESS) {
+					/*!
+					 * \note
+					 * Just returns resized canvas size.
+					 * Even if it is not ready to render contents.
+					 * Provider will allocate render buffer using this size.
+					 */
+					*width = arg->info.lb_create.width;
+					*height = arg->info.lb_create.height;
+				}
 			}
 		}
 
