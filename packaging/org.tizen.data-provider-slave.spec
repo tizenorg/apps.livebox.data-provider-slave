@@ -2,7 +2,7 @@
 
 Name: org.tizen.data-provider-slave
 Summary: Plugin type livebox service provider.
-Version: 0.10.3
+Version: 0.10.4
 Release: 1
 Group: HomeTF/Livebox
 License: Flora License
@@ -29,6 +29,7 @@ BuildRequires: pkgconfig(edje)
 BuildRequires: pkgconfig(evas)
 BuildRequires: pkgconfig(livebox)
 BuildRequires: pkgconfig(elementary)
+BuildRequires: pkgconfig(capi-system-system-settings)
 
 %description
 Plugin type liveboxes are managed by this.

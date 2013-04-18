@@ -23,6 +23,7 @@ pkg_check_modules(pkg REQUIRED
 	evas
 	livebox
 	elementary
+	capi-system-system-settings
 )
 
 SET(PACKAGE "${PROJECT_NAME}")
