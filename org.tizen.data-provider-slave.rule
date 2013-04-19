@@ -7,7 +7,7 @@ org.tizen.data-provider-slave system::share rwxat
 org.tizen.data-provider-slave sys-assert::core rwxat
 org.tizen.data-provider-slave ail::db rw
 org.tizen.data-provider-slave app-svc::db rw
-org.tizen.data-provider-slave xorg w
+org.tizen.data-provider-slave xorg rw
 org.tizen.data-provider-slave isf rwx
 org.tizen.data-provider-slave dbus wx
 org.tizen.data-provider-slave data-provider-master::data rx
