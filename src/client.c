@@ -1,7 +1,7 @@
 /*
  * Copyright 2013  Samsung Electronics Co., Ltd
  *
- * Licensed under the Flora License, Version 1.0 (the "License");
+ * Licensed under the Flora License, Version 1.1 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -61,6 +61,11 @@ static int method_new(struct event_arg *arg, int *width, int *height, double *pr
 		arg->info.lb_create.width,
 		arg->info.lb_create.height);
 
+	if (!arg->info.lb_create.content || !strlen(arg->info.lb_create.content)) {
+		DbgPrint("Use default content: \"%s\"\n", DEFAULT_CONTENT);
+		arg->info.lb_create.content = DEFAULT_CONTENT;
+	}
+
 	ret = lb_create(arg->pkgname, arg->id,
 			arg->info.lb_create.content,
 			arg->info.lb_create.timeout,
@@ -118,6 +123,11 @@ static int method_renew(struct event_arg *arg, void *data)
 		arg->info.lb_recreate.cluster,
 		arg->info.lb_recreate.category,
 		arg->info.lb_recreate.abi);
+
+	if (!arg->info.lb_recreate.content || !strlen(arg->info.lb_recreate.content)) {
+		DbgPrint("Use default content: \"%s\"\n", DEFAULT_CONTENT);
+		arg->info.lb_recreate.content = DEFAULT_CONTENT;
+	}
 
 	 ret = lb_create(arg->pkgname, arg->id,
 	 		arg->info.lb_recreate.content,
@@ -364,8 +374,6 @@ HAPI int client_init(const char *name)
 		.pd_move = method_pd_moved,
 		.lb_pause = method_lb_pause,
 		.lb_resume = method_lb_resume,
-		.pd_access = NULL,
-		.lb_access = NULL,
 	};
 
 	return provider_init(ecore_x_display_get(), name, &table, NULL);

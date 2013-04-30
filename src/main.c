@@ -1,7 +1,7 @@
 /*
  * Copyright 2013  Samsung Electronics Co., Ltd
  *
- * Licensed under the Flora License, Version 1.0 (the "License");
+ * Licensed under the Flora License, Version 1.1 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -52,7 +52,7 @@
 #include "lb.h"
 
 #define TEXT_CLASS	"tizen"
-#define TEXT_SIZE	-100
+#define DEFAULT_FONT_SIZE	-100
 
 #if !defined(VCONFKEY_SETAPPL_ACCESSIBILITY_FONT_NAME)
 #define VCONFKEY_SETAPPL_ACCESSIBILITY_FONT_NAME "db/setting/accessibility/font_name"
@@ -71,7 +71,7 @@ static struct info {
 	.property_handler = NULL,
 	.heap_monitor = 0,
 	.font_name = NULL,
-	.font_size = 3,
+	.font_size = DEFAULT_FONT_SIZE,
 };
 
 static void update_font_cb(void *data)
@@ -80,63 +80,50 @@ static void update_font_cb(void *data)
 	char *text;
 
 	list = edje_text_class_list();
-	EINA_LIST_FREE(list, text) {
-		if (!strncasecmp(text, TEXT_CLASS, strlen(TEXT_CLASS))) {
-			int size;
-			switch (s_info.font_size) {
-			case SYSTEM_SETTINGS_FONT_SIZE_SMALL:
-				size = -80;
-				break;
-			case SYSTEM_SETTINGS_FONT_SIZE_NORMAL:
-				size = -100;
-				break;
-			case SYSTEM_SETTINGS_FONT_SIZE_LARGE:
-				size = -150;
-				break;
-			case SYSTEM_SETTINGS_FONT_SIZE_HUGE:
-				size = -190;
-				break;
-			case SYSTEM_SETTINGS_FONT_SIZE_GIANT:
-				size = -250;
-				break;
-			default:
-				size = -100;
-				break;
+	DbgPrint("List: %p\n", list);
+	if (list) {
+		EINA_LIST_FREE(list, text) {
+			if (!strncasecmp(text, TEXT_CLASS, strlen(TEXT_CLASS))) {
+				DbgPrint("Update text class %s (%s, %d)\n", text, s_info.font_name, DEFAULT_FONT_SIZE);
+				edje_text_class_del(text);
+				edje_text_class_set(text, s_info.font_name, DEFAULT_FONT_SIZE);
+			} else {
+				DbgPrint("Skip text class %s\n", text);
 			}
-
-			DbgPrint("Update text class %s (%s, %d)\n", text, s_info.font_name, size);
-			edje_text_class_del(text);
-			edje_text_class_set(text, s_info.font_name, size);
-		} else {
-			DbgPrint("Skip text class %s\n", text);
 		}
+	} else {
+		DbgPrint("New (%s, %d)\n", s_info.font_name, DEFAULT_FONT_SIZE);
+		edje_text_class_set(TEXT_CLASS, s_info.font_name, DEFAULT_FONT_SIZE);
 	}
 
+	DbgPrint("Call system event\n");
 	lb_system_event_all(LB_SYS_EVENT_FONT_CHANGED);
 }
 
-static void font_changed_cb(system_settings_key_e key, void *user_data)
+static void font_changed_cb(keynode_t *node, void *user_data)
 {
-	int ret;
 	char *font_name;
 
-	ret = system_settings_get_value_string(SYSTEM_SETTINGS_KEY_FONT_TYPE, &font_name);
-	if (ret != SYSTEM_SETTINGS_ERROR_NONE || !font_name)
+	font_name = vconf_get_str("db/setting/accessibility/font_name");
+	if (!font_name) {
+		ErrPrint("Invalid font name (NULL)\n");
 		return;
+	}
 
 	if (s_info.font_name && !strcmp(s_info.font_name, font_name)) {
-		DbgPrint("Font is not changed\n");
+		DbgPrint("Font is not changed (Old: %s(%p) <> New: %s(%p))\n", s_info.font_name, s_info.font_name, font_name, font_name);
 		free(font_name);
 		return;
 	}
 
 	if (s_info.font_name) {
+		DbgPrint("Release old font name: %s(%p)\n", s_info.font_name, s_info.font_name);
 		free(s_info.font_name);
 		s_info.font_name = NULL;
 	}
 
 	s_info.font_name = font_name;
-	DbgPrint("Font name is changed to %s\n", s_info.font_name);
+	DbgPrint("Font name is changed to %s(%p)\n", s_info.font_name, s_info.font_name);
 
 	/*!
 	 * \NOTE
@@ -145,12 +132,41 @@ static void font_changed_cb(system_settings_key_e key, void *user_data)
 	update_font_cb(NULL);
 }
 
+static inline int convert_font_size(int size)
+{
+	switch (size) {
+	case SYSTEM_SETTINGS_FONT_SIZE_SMALL:
+		size = -80;
+		break;
+	case SYSTEM_SETTINGS_FONT_SIZE_NORMAL:
+		size = -100;
+		break;
+	case SYSTEM_SETTINGS_FONT_SIZE_LARGE:
+		size = -150;
+		break;
+	case SYSTEM_SETTINGS_FONT_SIZE_HUGE:
+		size = -190;
+		break;
+	case SYSTEM_SETTINGS_FONT_SIZE_GIANT:
+		size = -250;
+		break;
+	default:
+		size = -100;
+		break;
+	}
+
+	DbgPrint("Return size: %d\n", size);
+	return size;
+}
+
 static void font_size_cb(system_settings_key_e key, void *user_data)
 {
 	int size;
 
 	if (system_settings_get_value_int(SYSTEM_SETTINGS_KEY_FONT_SIZE, &size) != SYSTEM_SETTINGS_ERROR_NONE)
 		return;
+
+	size = convert_font_size(size);
 
 	if (size == s_info.font_size) {
 		DbgPrint("Font size is not changed\n");
@@ -181,6 +197,7 @@ static void time_changed_cb(keynode_t *node, void *user_data)
 static bool app_create(void *data)
 {
 	int ret;
+	int size = DEFAULT_FONT_SIZE;
 
 	ret = conf_loader();
 	DbgPrint("Configureation manager is initiated: %d\n", ret);
@@ -206,7 +223,7 @@ static bool app_create(void *data)
 	ret = update_monitor_init();
 	DbgPrint("Content update monitor is initiated: %d\n", ret);
 
-	ret = system_settings_set_changed_cb(SYSTEM_SETTINGS_KEY_FONT_TYPE, font_changed_cb, NULL);
+	ret = vconf_notify_key_changed("db/setting/accessibility/font_name", font_changed_cb, NULL);
 	DbgPrint("System font is changed: %d\n", ret);
 	
 	ret = system_settings_set_changed_cb(SYSTEM_SETTINGS_KEY_FONT_SIZE, font_size_cb, NULL);
@@ -218,13 +235,12 @@ static bool app_create(void *data)
 	ret = vconf_notify_key_changed(VCONFKEY_SYSMAN_MMC_STATUS, mmc_changed_cb, NULL);
 	DbgPrint("MMC status changed event callback added: %d\n", ret);
 
-	ret = system_settings_get_value_string(SYSTEM_SETTINGS_KEY_FONT_TYPE, &s_info.font_name);
-	if (ret == SYSTEM_SETTINGS_ERROR_NONE)
-		DbgPrint("Current font: %s\n", s_info.font_name);
+	s_info.font_name = vconf_get_str("db/setting/accessibility/font_name");
+	DbgPrint("Current font: %s\n", s_info.font_name);
 
-	ret = system_settings_get_value_int(SYSTEM_SETTINGS_KEY_FONT_SIZE, &s_info.font_size);
-	if (ret == SYSTEM_SETTINGS_ERROR_NONE)
-		DbgPrint("Current size: %d\n", s_info.font_size);
+	ret = system_settings_get_value_int(SYSTEM_SETTINGS_KEY_FONT_SIZE, &size);
+	s_info.font_size = convert_font_size(size);
+	DbgPrint("Current size: %d\n", s_info.font_size);
 
 	return TRUE;
 }

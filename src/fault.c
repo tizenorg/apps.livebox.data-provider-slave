@@ -1,7 +1,7 @@
 /*
  * Copyright 2013  Samsung Electronics Co., Ltd
  *
- * Licensed under the Flora License, Version 1.0 (the "License");
+ * Licensed under the Flora License, Version 1.1 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -66,7 +66,11 @@ static void signal_handler(int signum, siginfo_t *info, void *unused)
 			return;
 		}
 
-		gettimeofday(&tv, NULL);
+		if (gettimeofday(&tv, NULL) < 0) {
+			ErrPrint("gettimeofday: %s\n", strerror(errno));
+			tv.tv_sec = 0;
+			tv.tv_usec = 0;
+		}
 
 		timersub(&tv, &s_info.alarm_tv, &res_tv);
 
@@ -164,7 +168,11 @@ HAPI int fault_mark_call(const char *pkgname, const char *filename, const char *
 	 *   Enable alarm for detecting infinite loop
 	 */
 	if (!noalarm) {
-		gettimeofday(&s_info.alarm_tv, NULL);
+		if (gettimeofday(&s_info.alarm_tv, NULL) < 0) {
+			ErrPrint("gettimeofday: %s\n", strerror(errno));
+			s_info.alarm_tv.tv_sec = 0;
+			s_info.alarm_tv.tv_usec = 0;
+		}
 		s_info.marked = 1;
 		alarm(life_time);
 	}

@@ -1,7 +1,7 @@
 /*
  * Copyright 2013  Samsung Electronics Co., Ltd
  *
- * Licensed under the Flora License, Version 1.0 (the "License");
+ * Licensed under the Flora License, Version 1.1 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -47,6 +47,10 @@ struct item {
 	int heavy_updating; /* Only for debugging message */
 	int is_paused; /* 1 is paused, 0 is resumed */
 	double sleep_at;
+
+	int is_lb_show;
+	int is_pd_show;
+	int is_lb_updated;
 };
 
 static struct info {
@@ -351,7 +355,12 @@ static inline void timer_freeze(struct item *item)
 	if (ecore_timer_interval_get(item->timer) <= 1.0f)
 		return;
 
-	gettimeofday(&tv, NULL);
+	if (gettimeofday(&tv, NULL) < 0) {
+		ErrPrint("gettimeofday: %s\n", strerror(errno));
+		tv.tv_sec = 0;
+		tv.tv_usec = 0;
+	}
+
 	item->sleep_at = (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0f;
 }
 
@@ -441,7 +450,11 @@ static int desc_updated_cb(const char *filename, void *data, int over)
 	item = data;
 
 	DbgPrint("DESC %s is updated\n", filename);
-	provider_send_desc_updated(item->inst->item->pkgname, item->inst->id, filename);
+	if (item->is_pd_show) {
+		provider_send_desc_updated(item->inst->item->pkgname, item->inst->id, filename);
+	} else {
+		ErrPrint("But PD is not opened, Ignore this update (%s)\n", item->inst->id);
+	}
 	return EXIT_SUCCESS;
 }
 
@@ -472,8 +485,13 @@ static int file_updated_cb(const char *filename, void *data, int over)
 		return EXIT_SUCCESS; /*!< To keep the callback */
 	}
 
-	provider_send_updated(item->inst->item->pkgname, item->inst->id,
+	if (!item->inst->item->has_livebox_script || (item->inst->item->has_livebox_script && item->is_lb_show)) {
+		provider_send_updated(item->inst->item->pkgname, item->inst->id,
 					item->inst->w, item->inst->h, item->inst->priority, content, title);
+	} else {
+		DbgPrint("Livebox script is not ready yet\n");
+		item->is_lb_updated++;
+	}
 
 	return output_handler(item);
 }
@@ -1090,6 +1108,32 @@ HAPI int lb_script_event(const char *pkgname, const char *id, const char *emissi
 	}
 
 	item = eina_list_data_get(l);
+
+	DbgPrint("source(%s) emission(%s) %d\n", source, emission, item->inst->item->has_livebox_script);
+	if (emission && source && !strcmp(source, util_uri_to_path(id))) {
+		if (item->inst->item->has_livebox_script) {
+			if (!strcmp(emission, "lb,show")) {
+				DbgPrint("Livebox(%s) script is ready now\n", id);
+				item->is_lb_show = 1;
+
+				DbgPrint("Updated %d times, (content: %s), (title: %s)\n", item->is_lb_updated, item->inst->content, item->inst->title);
+				if (item->is_lb_updated) {
+					provider_send_updated(item->inst->item->pkgname, item->inst->id,
+								item->inst->w, item->inst->h, item->inst->priority, item->inst->content, item->inst->title);
+					item->is_lb_updated = 0;
+				}
+			} else if (!strcmp(emission, "lb,hide")) {
+				DbgPrint("Livebox(%s) script is hide now\n", id);
+				item->is_lb_show = 0;
+			}
+		}
+
+		if (!strcmp(emission, "pd,show")) {
+			item->is_pd_show = 1;
+		} else if (!strcmp(emission, "pd,hide")) {
+			item->is_pd_show = 0;
+		}
+	}
 
 	ret = so_script_event(inst, emission, source, event_info);
 	if (ret < 0)
