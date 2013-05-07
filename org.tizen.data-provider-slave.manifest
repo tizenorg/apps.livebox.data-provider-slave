@@ -2,36 +2,38 @@
 	<!-- Provider slave label -->
 	<define>
 		<domain name="org.tizen.data-provider-slave" policy="restricted" />
+		<request>
+			<smack request="sys-assert::core" type="rwxat" />
+			<smack request="device::app_logging" type="w" />
+			<smack request="system::vconf" type="rwxat" />
+			<smack request="system::homedir" type="rwxat" />
+			<smack request="system::use_internet" type="rw" />
+			<smack request="system::media" type="rwxat" />
+			<smack request="system::share" type="rwxat" />
+			<smack request="sys-assert::core" type="rwxat" />
+			<smack request="ail::db" type="rw" />
+			<smack request="app-svc::db" type="rw" />
+			<smack request="xorg" type="rw" />
+			<smack request="isf" type="rwx" />
+			<smack request="dbus" type="wx" />
+			<smack request="data-provider-master::data" type="rx" />
+			<smack request="data-provider-master::share" type="rwxat" />
+			<smack request="data-provider-master::db" type="rw" />
+			<smack request="data-provider-master" type="rw" />
+			<smack request="e17" type="rx" />
+			<smack request="dali" type="x" />
+			<smack request="pulseaudio" type="rwxat" />
+			<smack request="pkgmgr::db" type="rw" />
+		</request>
+		<permit>
+			<smack permit="e17" type="w" />
+			<smack permit="org.tizen.app-tray" type="rx" />
+			<smack permit="dbus" type="rwx" />
+		</permit>
 	</define>
 	<request>
 		<domain name="org.tizen.data-provider-slave" />
-		<smack request="sys-assert::core" type="rwxat" />
-		<smack request="device::app_logging" type="w" />
-		<smack request="system::vconf" type="rwxat" />
-		<smack request="system::homedir" type="rwxat" />
-		<smack request="system::use_internet" type="rw" />
-		<smack request="system::media" type="rwxat" />
-		<smack request="system::share" type="rwxat" />
-		<smack request="sys-assert::core" type="rwxat" />
-		<smack request="ail::db" type="rw" />
-		<smack request="app-svc::db" type="rw" />
-		<smack request="xorg" type="rw" />
-		<smack request="isf" type="rwx" />
-		<smack request="dbus" type="wx" />
-		<smack request="data-provider-master::data" type="rx" />
-		<smack request="data-provider-master::share" type="rwxat" />
-		<smack request="data-provider-master::db" type="rw" />
-		<smack request="data-provider-master" type="rw" />
-		<smack request="e17" type="rx" />
-		<smack request="dali" type="x" />
-		<smack request="pulseaudio" type="rwxat" />
-		<smack request="pkgmgr::db" type="rw" />
 	</request>
-	<permit>
-		<smack permit="e17" type="w" />
-		<smack permit="org.tizen.app-tray" type="rx" />
-		<smack permit="dbus" type="rwx" />
-	</permit>
 
 	<assign>
 		<!-- Application folder -->
