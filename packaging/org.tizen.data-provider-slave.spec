@@ -30,6 +30,7 @@ BuildRequires: pkgconfig(evas)
 BuildRequires: pkgconfig(livebox)
 BuildRequires: pkgconfig(elementary)
 BuildRequires: pkgconfig(capi-system-system-settings)
+Requires: data-provider-master
 
 %description
 Plugin type liveboxes are managed by this.
@@ -60,7 +61,7 @@ chmod 755 %{app_data}
 %{_prefix}/apps/org.tizen.data-provider-slave/bin/data-provider-slave
 %{_datarootdir}/packages/org.tizen.data-provider-slave.xml
 %{_datarootdir}/license/*
-%{_sysconfdir}/smack/accesses2.d/org.tizen.data-provider-slave.rule
+%{_sysconfdir}/smack/accesses.d/org.tizen.data-provider-slave.rule
 %dir %{app_data}
 
 # End of a file
