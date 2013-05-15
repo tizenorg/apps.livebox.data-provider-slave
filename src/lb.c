@@ -1469,4 +1469,9 @@ HAPI void lb_turn_secured_on(void)
 	s_info.secured = 1;
 }
 
+HAPI int lb_is_all_paused(void)
+{
+	return s_info.paused;
+}
+
 /* End of a file */

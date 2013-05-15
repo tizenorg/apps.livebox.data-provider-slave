@@ -30,6 +30,7 @@
 
 #include <provider.h>
 #include <livebox-errno.h>
+#include <livebox.h> /* LB_SYS_EVENT_XXX */
 
 #include "critical_log.h"
 #include "conf.h"
@@ -104,6 +105,11 @@ static int method_new(struct event_arg *arg, int *width, int *height, double *pr
 		ErrPrint("lb_create returns %d\n", ret);
 	}
 
+	if (lb_is_all_paused()) {
+		DbgPrint("Box is paused\n");
+		(void)lb_system_event(arg->pkgname, arg->id, LB_SYS_EVENT_PAUSED);
+	}
+
 	return ret;
 }
 
@@ -153,6 +159,11 @@ static int method_renew(struct event_arg *arg, void *data)
 		arg->info.lb_recreate.out_is_pinned_up = (lb_is_pinned_up(arg->pkgname, arg->id) == 1);
 	} else {
 		ErrPrint("lb_create returns %d\n", ret);
+	}
+
+	if (lb_is_all_paused()) {
+		DbgPrint("Box is paused\n");
+		(void)lb_system_event(arg->pkgname, arg->id, LB_SYS_EVENT_PAUSED);
 	}
 
 	return ret;

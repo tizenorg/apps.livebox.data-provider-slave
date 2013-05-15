@@ -698,6 +698,7 @@ HAPI int so_clicked(struct instance *inst, const char *event, double timestamp, 
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	DbgPrint("CLICKED: %lf\n", util_timestamp());
 	if (item->adaptor.clicked)
 		ret = item->adaptor.clicked(item->pkgname, util_uri_to_path(inst->id), event, timestamp, x, y);
 	else if (item->livebox.clicked)

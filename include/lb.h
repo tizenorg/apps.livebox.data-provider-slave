@@ -45,6 +45,8 @@ extern int lb_is_pinned_up(const char *pkgname, const char *id);
 
 extern void lb_turn_secured_on(void);
 
+extern int lb_is_all_paused(void);
+
 /*!
  * Exported API for each liveboxes
  */

@@ -2,12 +2,12 @@
 
 Name: org.tizen.data-provider-slave
 Summary: Plugin type livebox service provider.
-Version: 0.10.7
+Version: 0.11.2
 Release: 1
 Group: HomeTF/Livebox
 License: Flora License
 Source0: %{name}-%{version}.tar.gz
-BuildRequires: cmake, gettext-tools, coreutils
+BuildRequires: cmake, gettext-tools, coreutils, edje-bin
 BuildRequires: pkgconfig(appcore-efl)
 BuildRequires: pkgconfig(ail)
 BuildRequires: pkgconfig(dlog)
@@ -29,6 +29,8 @@ BuildRequires: pkgconfig(edje)
 BuildRequires: pkgconfig(evas)
 BuildRequires: pkgconfig(livebox)
 BuildRequires: pkgconfig(elementary)
+BuildRequires: pkgconfig(com-core)
+BuildRequires: pkgconfig(shortcut)
 BuildRequires: pkgconfig(capi-system-system-settings)
 Requires: data-provider-master
 
@@ -59,6 +61,8 @@ chmod 755 %{app_data}
 %manifest org.tizen.data-provider-slave.manifest
 %defattr(-,root,root,-)
 %{_prefix}/apps/org.tizen.data-provider-slave/bin/data-provider-slave
+%{_prefix}/apps/org.tizen.data-provider-slave/bin/icon-provider-slave
+%{_prefix}/apps/org.tizen.data-provider-slave/res/edje/icon.edj
 %{_datarootdir}/packages/org.tizen.data-provider-slave.xml
 %{_datarootdir}/license/*
 %{_sysconfdir}/smack/accesses.d/org.tizen.data-provider-slave.rule

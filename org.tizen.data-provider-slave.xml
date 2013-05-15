@@ -10,4 +10,10 @@
 		<label>Data provider (native)</label>
 		<label xml:lang="en-us">Data provider (native)</label>
 	</ui-application>
+
+	<ui-application appid="org.tizen.data-provider-slave.icon" exec="/usr/apps/org.tizen.data-provider-slave/bin/icon-provider-slave" nodisplay="true" multiple="false" type="capp" taskmanage="false">
+		<icon>org.tizen.icon-provider-slave.png</icon>
+		<label>Icon provider (native)</label>
+		<label xml:lang="en-us">Icon provider (native)</label>
+	</ui-application>
 </manifest>

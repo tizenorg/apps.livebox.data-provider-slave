@@ -1,0 +1,408 @@
+images {
+	image: "icon_shadow.png" COMP;
+}
+
+collections {
+	group {
+		name: "default,1x1";
+		parts {
+			part {
+				name: "bg";
+				type: IMAGE;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 0.0 0.0; }
+					rel2 { relative: 1.0 1.0; }
+					image { normal: "icon_shadow.png"; }
+					align: 0.5 0.5;
+					aspect: 1.0 1.0;
+					aspect_preference: BOTH;
+				}
+			}
+
+			part {
+				name: "icon";
+				type: SWALLOW;
+				description {
+					rel1 { relative: 33.5/175 21/175; }
+					rel2 { relative: 141.5/175 129/175; }
+				}
+			}
+
+			part {
+				name: "name";
+				type: TEXT;
+				//effect: FAR_SHADOW;
+				description {
+					rel1 { relative: 8/175 134/175; }
+					rel2 { relative: 167/175 164/175; }
+					color: 70 70 70 255;
+					color3: 255 255 255 255;
+					text {
+						font: "Tizen:style=Bold";
+						text_class: "tizen";
+						align: 0.5 0.5;
+						size : 23;
+					}
+				}
+			}
+		}
+	}
+	group {
+		name: "default,2x1";
+		parts {
+			part {
+				name: "bg";
+				type: IMAGE;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 89.5/354 0.0; }
+					rel2 { relative: 264.5/354 1.0; }
+					image { normal: "icon_shadow.png"; }
+					align: 0.5 0.5;
+					aspect: 1.0 1.0;
+					aspect_preference: BOTH;
+				}
+			}
+
+			part {
+				name: "icon";
+				type: SWALLOW;
+				description {
+					rel1 { relative: 123/354 21/175; }
+					rel2 { relative: 231/354 129/175; }
+				}
+			}
+
+			part {
+				name: "name";
+				type: TEXT;
+				//effect: FAR_SHADOW;
+				description {
+					rel1 { relative: 97.5/354 134/175; }
+					rel2 { relative: 256.5/354 164/175; }
+					color: 70 70 70 255;
+					color3: 255 255 255 255;
+					text {
+						font: "Tizen:style=Bold";
+						text_class: "tizen";
+						align: 0.5 0.5;
+						size : 23;
+					}
+				}
+			}
+		}
+	}
+	group {
+		name: "default,2x2";
+		parts {
+			part {
+				name: "bg";
+				type: IMAGE;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 89.5/354 74.5/354; }
+					rel2 { relative: 264.5/354 249.5/354; }
+					image { normal: "icon_shadow.png"; }
+					align: 0.5 0.5;
+					aspect: 1.0 1.0;
+					aspect_preference: BOTH;
+				}
+			}
+
+			part {
+				name: "icon";
+				type: SWALLOW;
+				description {
+					rel1 { relative: 123/354 108/354; }
+					rel2 { relative: 231/354 216/354; }
+				}
+			}
+
+			part {
+				name: "name";
+				type: TEXT;
+				//effect: FAR_SHADOW;
+				description {
+					rel1 { relative: 97.5/354 221/354; }
+					rel2 { relative: 256.5/354 251/354; }
+					color: 70 70 70 255;
+					color3: 255 255 255 255;
+					text {
+						font: "Tizen:style=Bold";
+						text_class: "tizen";
+						align: 0.5 0.5;
+						size : 23;
+					}
+				}
+			}
+		}
+	}
+	group {
+		name: "default,4x1";
+		parts {
+			part {
+				name: "bg";
+				type: IMAGE;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 268.5/712 0.0; }
+					rel2 { relative: 443.5/712 1.0; }
+					image { normal: "icon_shadow.png"; }
+					align: 0.5 0.5;
+					aspect: 1.0 1.0;
+					aspect_preference: BOTH;
+				}
+			}
+
+			part {
+				name: "icon";
+				type: SWALLOW;
+				description {
+					rel1 { relative: 302/712 21/175; }
+					rel2 { relative: 410/712 129/175; }
+				}
+			}
+
+			part {
+				name: "name";
+				type: TEXT;
+				//effect: FAR_SHADOW;
+				description {
+					rel1 { relative: 276.5/712 134/175; }
+					rel2 { relative: 435.5/712 164/175; }
+					color: 70 70 70 255;
+					color3: 255 255 255 255;
+					text {
+						font: "Tizen:style=Bold";
+						text_class: "tizen";
+						align: 0.5 0.5;
+						size : 23;
+					}
+				}
+			}
+		}
+	}
+	group {
+		name: "default,4x2";
+		parts {
+			part {
+				name: "bg";
+				type: IMAGE;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 268.5/712 74.5/354; }
+					rel2 { relative: 443.5/712 249.5/354; }
+					image { normal: "icon_shadow.png"; }
+					align: 0.5 0.5;
+					aspect: 1.0 1.0;
+					aspect_preference: BOTH;
+				}
+			}
+
+			part {
+				name: "icon";
+				type: SWALLOW;
+				description {
+					rel1 { relative: 302/712 108/354; }
+					rel2 { relative: 410/712 218/354; }
+				}
+			}
+
+			part {
+				name: "name";
+				type: TEXT;
+				//effect: FAR_SHADOW;
+				description {
+					rel1 { relative: 276.5/712 223/354; }
+					rel2 { relative: 435.5/712 253/354; }
+					color: 70 70 70 255;
+					color3: 255 255 255 255;
+					text {
+						font: "Tizen:style=Bold";
+						text_class: "tizen";
+						align: 0.5 0.5;
+						size : 23;
+					}
+				}
+			}
+		}
+	}
+	group {
+		name: "default,4x3";
+		parts {
+			part {
+				name: "bg";
+				type: IMAGE;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 268.5/712 179/533; }
+					rel2 { relative: 443.5/712 354/533; }
+					image { normal: "icon_shadow.png"; }
+					align: 0.5 0.5;
+					aspect: 1.0 1.0;
+					aspect_preference: BOTH;
+				}
+			}
+
+			part {
+				name: "icon";
+				type: SWALLOW;
+				description {
+					rel1 { relative: 302/712 212.5/533; }
+					rel2 { relative: 410/712 320.5/533; }
+				}
+			}
+
+			part {
+				name: "name";
+				type: TEXT;
+				//effect: FAR_SHADOW;
+				description {
+					rel1 { relative: 276.5/712 325.5/533; }
+					rel2 { relative: 435.5/712 355.5/533; }
+					color: 70 70 70 255;
+					color3: 255 255 255 255;
+					text {
+						font: "Tizen:style=Bold";
+						text_class: "tizen";
+						align: 0.5 0.5;
+						size : 23;
+					}
+				}
+			}
+		}
+	}
+	group {
+		name: "default,4x4";
+		parts {
+			part {
+				name: "bg";
+				type: IMAGE;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 268.5/712 268.5/712; }
+					rel2 { relative: 443.5/712 443.5/712; }
+					image { normal: "icon_shadow.png"; }
+					align: 0.5 0.5;
+					aspect: 1.0 1.0;
+					aspect_preference: BOTH;
+				}
+			}
+			part {
+				name: "icon";
+				type: SWALLOW;
+				description {
+					rel1 { relative: 302/712 302/712; }
+					rel2 { relative: 410/712 410/712; }
+				}
+			}
+
+			part {
+				name: "name";
+				type: TEXT;
+				//effect: FAR_SHADOW;
+				description {
+					rel1 { relative: 276.5/712 415/712; }
+					rel2 { relative: 435.5/712 445/712; }
+					color: 70 70 70 255;
+					color3: 255 255 255 255;
+					text {
+						font: "Tizen:style=Bold";
+						text_class: "tizen";
+						align: 0.5 0.5;
+						size : 23;
+					}
+				}
+			}
+		}
+	}
+	group {
+		name: "default,4x5";
+		parts {
+			part {
+				name: "bg";
+				type: IMAGE;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 268.5/712 358/891; }
+					rel2 { relative: 443.5/712 533/891; }
+					image { normal: "icon_shadow.png"; }
+					align: 0.5 0.5;
+					aspect: 1.0 1.0;
+					aspect_preference: BOTH;
+				}
+			}
+			part {
+				name: "icon";
+				type: SWALLOW;
+				description {
+					rel1 { relative: 302/712 391.5/891; }
+					rel2 { relative: 410/712 499.5/891; }
+				}
+			}
+
+			part {
+				name: "name";
+				type: TEXT;
+				//effect: FAR_SHADOW;
+				description {
+					rel1 { relative: 276.5/712 504.5/891; }
+					rel2 { relative: 435.5/712 534.5/891; }
+					color: 70 70 70 255;
+					color3: 255 255 255 255;
+					text {
+						font: "Tizen:style=Bold";
+						text_class: "tizen";
+						align: 0.5 0.5;
+						size : 23;
+					}
+				}
+			}
+		}
+	}
+	group {
+		name: "default,4x6";
+		parts {
+			part {
+				name: "bg";
+				type: IMAGE;
+				description {
+					state: "default" 0.0;
+					rel1 { relative: 268.5/712 447.5/1070; }
+					rel2 { relative: 443.5/712 622.5/1070; }
+					image { normal: "icon_shadow.png"; }
+					align: 0.5 0.5;
+					aspect: 1.0 1.0;
+					aspect_preference: BOTH;
+				}
+			}
+			part {
+				name: "icon";
+				type: SWALLOW;
+				description {
+					rel1 { relative: 302/712 481/1070; }
+					rel2 { relative: 410/712 589/1070; }
+				}
+			}
+
+			part {
+				name: "name";
+				type: TEXT;
+				//effect: FAR_SHADOW;
+				description {
+					rel1 { relative: 276.5/712 594/1070; }
+					rel2 { relative: 435.5/712 624/1070; }
+					color: 70 70 70 255;
+					color3: 255 255 255 255;
+					text {
+						font: "Tizen:style=Bold";
+						text_class: "tizen";
+						align: 0.5 0.5;
+						size : 23;
+					}
+				}
+			}
+		}
+	}
+}

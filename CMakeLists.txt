@@ -24,6 +24,8 @@ pkg_check_modules(pkg REQUIRED
 	livebox
 	elementary
 	capi-system-system-settings
+	com-core
+	shortcut
 )
 
 SET(PACKAGE "${PROJECT_NAME}")
@@ -66,11 +68,20 @@ ADD_EXECUTABLE(${PROJECT_NAME}
 )
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${pkg_LDFLAGS} "-ldl")
+
+ADD_EXECUTABLE(icon-provider-slave
+	icon_src/main.c
+	icon_src/script_handler.c
+	src/util.c
+)
+TARGET_LINK_LIBRARIES("icon-provider-slave" ${pkg_LDFLAGS} "-ldl")
+
 #INSTALL(FILES ${CMAKE_SOURCE_DIR}/org.tizen.data-provider-slave.desktop DESTINATION /usr/share/applications)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/org.tizen.data-provider-slave.xml DESTINATION /usr/share/packages)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION /usr/share/license RENAME "org.tizen.${PROJECT_NAME}")
 INSTALL(TARGETS ${PROJECT_NAME} DESTINATION /usr/apps/org.tizen.${PROJECT_NAME}/bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/org.tizen.data-provider-slave.rule DESTINATION /etc/smack/accesses.d)
+INSTALL(TARGETS "icon-provider-slave" DESTINATION /usr/apps/org.tizen.${PROJECT_NAME}/bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 # INCLUDE FOR BUILD & INSTALL .PO FILES
 ADD_SUBDIRECTORY(res)

@@ -63,12 +63,10 @@
 #endif
 
 static struct info {
-	Ecore_Event_Handler *property_handler;
 	int heap_monitor;
 	char *font_name;
 	int font_size;
 } s_info = {
-	.property_handler = NULL,
 	.heap_monitor = 0,
 	.font_name = NULL,
 	.font_size = DEFAULT_FONT_SIZE,
@@ -174,9 +172,7 @@ static void font_size_cb(system_settings_key_e key, void *user_data)
 	}
 
 	s_info.font_size = size;
-	DbgPrint("Font size is changed to %d\n", size);
-
-	update_font_cb(NULL);
+	DbgPrint("Font size is changed to %d, but don't try to update it.\n", size);
 }
 
 static void mmc_changed_cb(keynode_t *node, void *user_data)
@@ -268,9 +264,6 @@ static void app_terminate(void *data)
 
 	ret = livebox_service_fini();
 	DbgPrint("livebox service fini: %d\n", ret);
-
-	ecore_event_handler_del(s_info.property_handler);
-	s_info.property_handler = NULL;
 
 	return;
 }
