@@ -68,6 +68,19 @@ static struct info {
 #define TTL	30.0f	/* Can alive only 30 seconds from the last event */
 #define QUALITY_N_COMPRESS "quality=100 compress=1"
 
+/*!
+ * Defined for liblivebox
+ */
+const char *livebox_find_pkgname(const char *filename)
+{
+	return NULL;
+}
+
+int livebox_request_update_by_id(const char *filename)
+{
+	return -ENOSYS;
+}
+
 static inline Evas *create_virtual_canvas(int w, int h)
 {
         Ecore_Evas *internal_ee;
