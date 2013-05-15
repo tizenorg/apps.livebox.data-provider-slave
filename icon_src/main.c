@@ -78,7 +78,7 @@ const char *livebox_find_pkgname(const char *filename)
 
 int livebox_request_update_by_id(const char *filename)
 {
-	return -ENOSYS;
+	return LB_STATUS_ERROR_NOT_EXISTS;
 }
 
 static inline Evas *create_virtual_canvas(int w, int h)
