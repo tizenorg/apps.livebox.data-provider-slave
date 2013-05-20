@@ -855,7 +855,7 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 		if (!item->timer) {
 			ErrPrint("Failed to add timer (%s - %s, content[%s], cluster[%s], category[%s], abi[%s]\n", pkgname, id, content_info, cluster, category, abi);
 			update_monitor_del(id, item);
-			so_destroy(inst);
+			(void)so_destroy(inst);
 			free(item);
 			return LB_STATUS_ERROR_FAULT;
 		}
@@ -1305,6 +1305,30 @@ HAPI int lb_update_all(const char *pkgname, const char *cluster, const char *cat
 		}
 	}
 
+	return LB_STATUS_SUCCESS;
+}
+
+HAPI int lb_delete_all_deleteme(void)
+{
+	Eina_List *l;
+	Eina_List *n;
+	struct item *item;
+	int cnt = 0;
+
+	DbgPrint("Delete all deleteme\n");
+	EINA_LIST_FOREACH_SAFE(s_info.item_list, l, n, item) {
+		if (!item->deleteme)
+			continue;
+
+		s_info.item_list = eina_list_remove(s_info.item_list, item);
+
+		update_monitor_del(item->inst->id, item);
+		(void)so_destroy(item->inst);
+		free(item);
+		cnt++;
+	}
+
+	DbgPrint("Deleteme: %d\n", cnt);
 	return LB_STATUS_SUCCESS;
 }
 

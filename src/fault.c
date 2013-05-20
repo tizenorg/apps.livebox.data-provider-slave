@@ -83,7 +83,7 @@ static void signal_handler(int signum, siginfo_t *info, void *unused)
 			return;
 		}
 
-		DbgPrint("ALARM: %d.%d (%d, %d)\n",
+		CRITICAL_LOG("ALARM: %d.%d (%d, %d)\n",
 				res_tv.tv_sec, res_tv.tv_usec, DEFAULT_LIFE_TIMER, DEFAULT_LOAD_TIMER);
 	} else if (so_fname) {
 		int fd;
@@ -98,12 +98,11 @@ static void signal_handler(int signum, siginfo_t *info, void *unused)
 		}
 	}
 
-	ErrPrint("=====\n");
-	ErrPrint("SIGNAL> Received from PID[%d]\n", info->si_pid);
-	ErrPrint("SIGNAL> Signal: %d (%d)\n", signum, info->si_signo);
-	ErrPrint("SIGNAL> Error code: %d\n", info->si_code);
-	ErrPrint("SIGNAL> Address: %p\n", info->si_addr);
-	ErrPrint("Package: [%s] Symbol[%s]\n", so_fname, symbol);
+	CRITICAL_LOG("SIGNAL> Received from PID[%d]\n", info->si_pid);
+	CRITICAL_LOG("SIGNAL> Signal: %d (%d)\n", signum, info->si_signo);
+	CRITICAL_LOG("SIGNAL> Error code: %d\n", info->si_code);
+	CRITICAL_LOG("SIGNAL> Address: %p\n", info->si_addr);
+	CRITICAL_LOG("Package: [%s] Symbol[%s]\n", so_fname, symbol);
 	free(so_fname);
 	free(symbol);
 
