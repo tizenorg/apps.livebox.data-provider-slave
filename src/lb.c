@@ -328,12 +328,15 @@ static inline void timer_thaw(struct item *item)
 	double delay;
 	double sleep_time;
 
+	if (!item->timer)
+		return;
+
 	ecore_timer_thaw(item->timer);
 	period = ecore_timer_interval_get(item->timer);
 	pending = ecore_timer_pending_get(item->timer);
 	delay = util_time_delay_for_compensation(period) - pending;
 	ecore_timer_delay(item->timer, delay);
-	DbgPrint("Compensated: %lf\n", delay);
+	DbgPrint("Compensated: %lf, Instance %s resume timer\n", delay, item->inst->item->pkgname);
 
 	if (item->sleep_at == 0.0f)
 		return;
@@ -350,6 +353,10 @@ static inline void timer_thaw(struct item *item)
 static inline void timer_freeze(struct item *item)
 {
 	struct timeval tv;
+
+	if (!item->timer)
+		return;
+
 	ecore_timer_freeze(item->timer);
 
 	if (ecore_timer_interval_get(item->timer) <= 1.0f)
@@ -362,6 +369,7 @@ static inline void timer_freeze(struct item *item)
 	}
 
 	item->sleep_at = (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0f;
+	DbgPrint("Instance %s freeze timer\n", item->inst->item->pkgname);
 }
 
 static inline void update_monitor_cnt(struct item *item)
@@ -1369,12 +1377,7 @@ HAPI void lb_pause_all(void)
 			continue;
 		}
 
-		if (item->timer) {
-			DbgPrint("Instance %s freeze timer\n", item->inst->item->pkgname);
-			timer_freeze(item);
-		} else {
-			DbgPrint("Instance %s has no timer\n", item->inst->item->pkgname);
-		}
+		timer_freeze(item);
 
 		lb_sys_event(item->inst, item, LB_SYS_EVENT_PAUSED);
 	}
@@ -1400,10 +1403,7 @@ HAPI void lb_resume_all(void)
 			continue;
 		}
 
-		if (item->timer) {
-			DbgPrint("Instance %s resume timer\n", item->inst->item->pkgname);
-			timer_thaw(item);
-		}
+		timer_thaw(item);
 
 		lb_sys_event(item->inst, item, LB_SYS_EVENT_RESUMED);
 	}
@@ -1441,8 +1441,7 @@ HAPI int lb_pause(const char *pkgname, const char *id)
 		return LB_STATUS_SUCCESS;
 	}
 
-	if (item->timer)
-		timer_freeze(item);
+	timer_freeze(item);
 
 	lb_sys_event(inst, item, LB_SYS_EVENT_PAUSED);
 
@@ -1481,8 +1480,7 @@ HAPI int lb_resume(const char *pkgname, const char *id)
 		return LB_STATUS_SUCCESS;
 	}
 
-	if (item->timer)
-		timer_thaw(item);
+	timer_thaw(item);
 
 	lb_sys_event(inst, item, LB_SYS_EVENT_RESUMED);
 	return LB_STATUS_SUCCESS;

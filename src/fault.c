@@ -113,9 +113,13 @@ static void signal_handler(int signum, siginfo_t *info, void *unused)
 HAPI int fault_init(void)
 {
 	struct sigaction act;
+	char *ecore_abort;
 
-	if (access("/tmp/live.err", F_OK) == 0)
-		ErrPrint("Error log still exists (/tmp/live.err)\n");
+	ecore_abort = getenv("ECORE_ERROR_ABORT");
+	if (ecore_abort && ecore_abort[0] == '1') {
+		DbgPrint("Ecore abort is enabled\n");
+		return 0;
+	}
 
 	act.sa_sigaction = signal_handler;
 	act.sa_flags = SA_SIGINFO;
