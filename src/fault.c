@@ -115,30 +115,29 @@ HAPI int fault_init(void)
 	struct sigaction act;
 	char *ecore_abort;
 
-	ecore_abort = getenv("ECORE_ERROR_ABORT");
-	if (ecore_abort && ecore_abort[0] == '1') {
-		DbgPrint("Ecore abort is enabled\n");
-		return 0;
-	}
-
 	act.sa_sigaction = signal_handler;
 	act.sa_flags = SA_SIGINFO;
 
 	sigemptyset(&act.sa_mask);
-	sigaddset(&act.sa_mask, SIGSEGV);
-	sigaddset(&act.sa_mask, SIGABRT);
-	sigaddset(&act.sa_mask, SIGILL);
+
 	sigaddset(&act.sa_mask, SIGUSR1);
 	sigaddset(&act.sa_mask, SIGALRM);
 
-	if (sigaction(SIGSEGV, &act, NULL) < 0)
-		ErrPrint("Failed to install the SEGV handler\n");
+	ecore_abort = getenv("ECORE_ERROR_ABORT");
+	if (!ecore_abort || ecore_abort[0] != '1') {
+		sigaddset(&act.sa_mask, SIGSEGV);
+		sigaddset(&act.sa_mask, SIGABRT);
+		sigaddset(&act.sa_mask, SIGILL);
 
-	if (sigaction(SIGABRT, &act, NULL) < 0)
-		ErrPrint("Faield to install the ABRT handler\n");
+		if (sigaction(SIGSEGV, &act, NULL) < 0)
+			ErrPrint("Failed to install the SEGV handler\n");
 
-	if (sigaction(SIGILL, &act, NULL) < 0)
-		ErrPrint("Faield to install the ILL handler\n");
+		if (sigaction(SIGABRT, &act, NULL) < 0)
+			ErrPrint("Faield to install the ABRT handler\n");
+
+		if (sigaction(SIGILL, &act, NULL) < 0)
+			ErrPrint("Faield to install the ILL handler\n");
+	}
 
 	if (sigaction(SIGUSR1, &act, NULL) < 0)
 		ErrPrint("Failed to install the USR1 handler\n");
