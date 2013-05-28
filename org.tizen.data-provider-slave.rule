@@ -20,3 +20,4 @@ org.tizen.data-provider-slave pkgmgr::db rw
 org.tizen.data-provider-slave sys-assert::core rwxat
 e17 org.tizen.data-provider-slave rwx
 dbus org.tizen.data-provider-slave rwx
+org.tizen.data-provider-slave sound_server rw
