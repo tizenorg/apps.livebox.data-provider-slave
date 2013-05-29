@@ -235,6 +235,8 @@ static bool app_create(void *data)
 	DbgPrint("Current font: %s\n", s_info.font_name);
 
 	ret = system_settings_get_value_int(SYSTEM_SETTINGS_KEY_FONT_SIZE, &size);
+	DbgPrint("Get fontsize: %d\n", ret);
+
 	s_info.font_size = convert_font_size(size);
 	DbgPrint("Current size: %d\n", s_info.font_size);
 
@@ -245,8 +247,14 @@ static void app_terminate(void *data)
 {
 	int ret;
 
+	ret = lb_delete_all_deleteme();
+	DbgPrint("Delete all deleteme: %d\n", ret);
+
 	ret = system_settings_unset_changed_cb(SYSTEM_SETTINGS_KEY_FONT_SIZE);
+	DbgPrint("unset fontsize: %d\n", ret);
+
 	ret = system_settings_unset_changed_cb(SYSTEM_SETTINGS_KEY_FONT_TYPE);
+	DbgPrint("unset font: %d\n", ret);
 
 	ret = vconf_ignore_key_changed(VCONFKEY_SYSMAN_STIME, time_changed_cb);
 	DbgPrint("Remove time changed callback: %d\n", ret);
@@ -256,6 +264,7 @@ static void app_terminate(void *data)
 
 	ret = update_monitor_fini();
 	DbgPrint("Content update monitor is finalized: %d\n", ret);
+
 	ret = fault_fini();
 	DbgPrint("Crash recover is finalized: %d\n", ret);
 
