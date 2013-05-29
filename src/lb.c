@@ -1117,8 +1117,7 @@ HAPI int lb_script_event(const char *pkgname, const char *id, const char *emissi
 
 	item = eina_list_data_get(l);
 
-	DbgPrint("source(%s) emission(%s) %d\n", source, emission, item->inst->item->has_livebox_script);
-	if (emission && source && !strcmp(source, util_uri_to_path(id))) {
+	if (emission && source && !strcmp(source, id)) {
 		if (item->inst->item->has_livebox_script) {
 			if (!strcmp(emission, "lb,show")) {
 				DbgPrint("Livebox(%s) script is ready now\n", id);
@@ -1130,16 +1129,22 @@ HAPI int lb_script_event(const char *pkgname, const char *id, const char *emissi
 								item->inst->w, item->inst->h, item->inst->priority, item->inst->content, item->inst->title);
 					item->is_lb_updated = 0;
 				}
+
+				source = util_uri_to_path(source);
 			} else if (!strcmp(emission, "lb,hide")) {
 				DbgPrint("Livebox(%s) script is hide now\n", id);
 				item->is_lb_show = 0;
+
+				source = util_uri_to_path(source);
 			}
 		}
 
 		if (!strcmp(emission, "pd,show")) {
 			item->is_pd_show = 1;
+			source = util_uri_to_path(source);
 		} else if (!strcmp(emission, "pd,hide")) {
 			item->is_pd_show = 0;
+			source = util_uri_to_path(source);
 		}
 	}
 

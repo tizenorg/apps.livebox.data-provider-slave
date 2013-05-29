@@ -829,10 +829,10 @@ static inline void consuming_parsed_block(Evas_Object *edje, int lineno, struct 
 		break;
 	}
 
-	delete_block(block);
-
 	if (!handlers[i].type)
 		ErrPrint("%d: Unknown block type: %s\n", lineno, block->type);
+
+	delete_block(block);
 
 	return;
 }
@@ -893,6 +893,7 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 	info = malloc(sizeof(*info));
 	if (!info) {
 		ErrPrint("Heap: %s\n", strerror(errno));
+		fclose(fp);
 		return LB_STATUS_ERROR_MEMORY;
 	}
 	info->id = NULL;
