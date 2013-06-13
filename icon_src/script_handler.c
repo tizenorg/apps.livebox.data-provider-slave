@@ -504,12 +504,114 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 					w = (double)w * fh;
 				}
 			}
-			DbgPrint("Size: %dx%d\n", w, h);
 
-			evas_object_image_load_size_set(img, w, h);
-			evas_object_image_load_region_set(img, (w - part_w) / 2, (h - part_h) / 2, part_w, part_h);
-			evas_object_image_fill_set(img, 0, 0, part_w, part_h);
-			evas_object_image_reload(img);
+			if (!part_w || !part_h || !w || !h) {
+				evas_object_del(img);
+				free(child->part);
+				free(child);
+				return LB_STATUS_ERROR_INVALID;
+			}
+
+			if (evas_object_image_region_support_get(img)) {
+				evas_object_image_load_region_set(img, (w - part_w) / 2, (h - part_h) / 2, part_w, part_h);
+				evas_object_image_load_size_set(img, part_w, part_h);
+				evas_object_image_fill_set(img, 0, 0, part_w, part_h);
+				DbgPrint("Size: %dx%d (region: %dx%d - %dx%d)\n", w, h, (w - part_w) / 2, (h - part_h) / 2, part_w, part_h);
+			} else {
+				Ecore_Evas *ee;
+				Evas *e;
+				Evas_Object *src_img;
+				Evas_Coord rw, rh;
+				const void *data;
+
+				DbgPrint("Part loading is not supported\n");
+				ee = ecore_evas_buffer_new(part_w, part_h);
+				if (!ee) {
+					ErrPrint("Failed to create a EE\n");
+					evas_object_del(img);
+					free(child->part);
+					free(child);
+					return LB_STATUS_ERROR_FAULT;
+				}
+
+				e = ecore_evas_get(ee);
+				if (!e) {
+					ErrPrint("Unable to get Evas\n");
+					ecore_evas_free(ee);
+
+					evas_object_del(img);
+					free(child->part);
+					free(child);
+					return LB_STATUS_ERROR_FAULT;
+				}
+
+				src_img = evas_object_image_filled_add(e);
+				if (!src_img) {
+					ErrPrint("Unable to add an image\n");
+					ecore_evas_free(ee);
+
+					evas_object_del(img);
+					free(child->part);
+					free(child);
+					return LB_STATUS_ERROR_FAULT;
+				}
+
+				evas_object_image_load_orientation_set(src_img, img_opt.orient);
+				evas_object_image_file_set(src_img, block->data, NULL);
+				err = evas_object_image_load_error_get(src_img);
+				if (err != EVAS_LOAD_ERROR_NONE) {
+					ErrPrint("Load error: %s\n", evas_load_error_str(err));
+					evas_object_del(src_img);
+					ecore_evas_free(ee);
+
+					evas_object_del(img);
+					free(child->part);
+					free(child);
+					return LB_STATUS_ERROR_IO;
+				}
+				evas_object_image_size_get(src_img, &rw, &rh);
+				evas_object_image_fill_set(src_img, 0, 0, rw, rh);
+				evas_object_resize(src_img, w, h);
+				evas_object_move(src_img, -(w - part_w) / 2, -(h - part_h) / 2);
+				evas_object_show(src_img);
+
+				data = ecore_evas_buffer_pixels_get(ee);
+				if (!data) {
+					ErrPrint("Unable to get pixels\n");
+					evas_object_del(src_img);
+					ecore_evas_free(ee);
+
+					evas_object_del(img);
+					free(child->part);
+					free(child);
+					return LB_STATUS_ERROR_IO;
+				}
+
+				e = evas_object_evas_get(img);
+				evas_object_del(img);
+				img = evas_object_image_filled_add(e);
+				if (!img) {
+					evas_object_del(src_img);
+					ecore_evas_free(ee);
+
+					free(child->part);
+					free(child);
+					return LB_STATUS_ERROR_MEMORY;
+				}
+
+				evas_object_image_colorspace_set(img, EVAS_COLORSPACE_ARGB8888);
+        			evas_object_image_smooth_scale_set(img, EINA_TRUE);
+				evas_object_image_alpha_set(img, EINA_TRUE);
+				evas_object_image_data_set(img, NULL);
+				evas_object_image_size_set(img, part_w, part_h);
+				evas_object_resize(img, part_w, part_h);
+				evas_object_image_data_copy_set(img, (void *)data);
+				evas_object_image_fill_set(img, 0, 0, part_w, part_h);
+				evas_object_image_data_update_add(img, 0, 0, part_w, part_h);
+
+				evas_object_del(src_img);
+				ecore_evas_free(ee);
+			}
 		} else if (img_opt.fill == FILL_IN_SIZE) {
 			Evas_Coord part_w;
 			Evas_Coord part_h;

@@ -253,8 +253,8 @@ static void app_terminate(void *data)
 	ret = system_settings_unset_changed_cb(SYSTEM_SETTINGS_KEY_FONT_SIZE);
 	DbgPrint("unset fontsize: %d\n", ret);
 
-	ret = system_settings_unset_changed_cb(SYSTEM_SETTINGS_KEY_FONT_TYPE);
-	DbgPrint("unset font: %d\n", ret);
+	ret = vconf_ignore_key_changed("db/setting/accessibility/font_name", font_changed_cb);
+	DbgPrint("Remove font change callback: %d\n", ret);
 
 	ret = vconf_ignore_key_changed(VCONFKEY_SYSMAN_STIME, time_changed_cb);
 	DbgPrint("Remove time changed callback: %d\n", ret);

@@ -34,6 +34,7 @@
 #include <Edje.h>
 #include <Eina.h>
 
+#include <vconf.h>
 #include <dlog.h>
 #include <bundle.h>
 #include <livebox-service.h>
@@ -53,16 +54,21 @@
 #define DEFAULT_ICON_LAYOUT "/usr/apps/org.tizen.data-provider-slave/res/edje/icon.edj"
 #define DEFAULT_ICON_GROUP "default"
 
+#define TEXT_CLASS	"tizen"
+#define DEFAULT_FONT_SIZE	-100
+
 int script_handler_parse_desc(Evas_Object *edje, const char *descfile);
 
 static struct info {
 	Ecore_Timer *ttl_timer;
 	int client_fd;
 	const char *socket_file;
+	char *font_name;
 } s_info = {
 	.ttl_timer = NULL,
 	.client_fd = -1,
 	.socket_file = UTILITY_ADDR,
+	.font_name = NULL,
 };
 
 #define TTL	30.0f	/* Can alive only 30 seconds from the last event */
@@ -390,8 +396,61 @@ static inline void client_fini(void)
 	s_info.client_fd = -1;
 }
 
+static void update_font_cb(void *data)
+{
+	Eina_List *list;
+	char *text;
+
+	list = edje_text_class_list();
+	DbgPrint("List: %p\n", list);
+	if (list) {
+		EINA_LIST_FREE(list, text) {
+			if (!strncasecmp(text, TEXT_CLASS, strlen(TEXT_CLASS))) {
+				DbgPrint("Update text class %s (%s, %d)\n", text, s_info.font_name, DEFAULT_FONT_SIZE);
+				edje_text_class_del(text);
+				edje_text_class_set(text, s_info.font_name, DEFAULT_FONT_SIZE);
+			} else {
+				DbgPrint("Skip text class %s\n", text);
+			}
+		}
+	} else {
+		DbgPrint("New (%s, %d)\n", s_info.font_name, DEFAULT_FONT_SIZE);
+		edje_text_class_set(TEXT_CLASS, s_info.font_name, DEFAULT_FONT_SIZE);
+	}
+}
+
+static void font_changed_cb(keynode_t *node, void *user_data)
+{
+	char *font_name;
+
+	font_name = vconf_get_str("db/setting/accessibility/font_name");
+	if (!font_name) {
+		ErrPrint("Invalid font name (NULL)\n");
+		return;
+	}
+
+	if (s_info.font_name && !strcmp(s_info.font_name, font_name)) {
+		DbgPrint("Font is not changed (Old: %s(%p) <> New: %s(%p))\n", s_info.font_name, s_info.font_name, font_name, font_name);
+		free(font_name);
+		return;
+	}
+
+	if (s_info.font_name) {
+		DbgPrint("Release old font name: %s(%p)\n", s_info.font_name, s_info.font_name);
+		free(s_info.font_name);
+		s_info.font_name = NULL;
+	}
+
+	s_info.font_name = font_name;
+	DbgPrint("Font name is changed to %s(%p)\n", s_info.font_name, s_info.font_name);
+
+	update_font_cb(NULL);
+}
+
 static bool app_create(void *data)
 {
+	int ret;
+
 	if (client_init() < 0) {
 		ErrPrint("Unable to initiate the client\n");
 		return FALSE;
@@ -404,17 +463,28 @@ static bool app_create(void *data)
 	if (!s_info.ttl_timer)
 		ErrPrint("Unable to register a life timer\n");
 
+	ret = vconf_notify_key_changed("db/setting/accessibility/font_name", font_changed_cb, NULL);
+	DbgPrint("System font is changed: %d\n", ret);
+
+	font_changed_cb(NULL, NULL);
 	return TRUE;
 }
 
 static void app_terminate(void *data)
 {
+	int ret;
+
+	ret = vconf_ignore_key_changed("db/setting/accessibility/font_name", font_changed_cb);
+	DbgPrint("Remove font change callback: %d\n", ret);
+
 	if (s_info.ttl_timer) {
 		ecore_timer_del(s_info.ttl_timer);
 		s_info.ttl_timer = NULL;
 	}
 
 	client_fini();
+
+	free(s_info.font_name);
 	return;
 }
 
