@@ -2,7 +2,7 @@
 
 Name: org.tizen.data-provider-slave
 Summary: Plugin type livebox service provider.
-Version: 0.11.6
+Version: 0.11.7
 Release: 1
 Group: HomeTF/Livebox
 License: Flora License
@@ -32,6 +32,7 @@ BuildRequires: pkgconfig(elementary)
 BuildRequires: pkgconfig(com-core)
 BuildRequires: pkgconfig(shortcut)
 BuildRequires: pkgconfig(capi-system-system-settings)
+BuildRequires: hash-signer
 Requires: data-provider-master
 
 %description
@@ -50,6 +51,11 @@ CFLAGS="${CFLAGS} -Wall -Winline -Werror -fno-builtin-malloc" make %{?jobs:-j%jo
 %install
 rm -rf %{buildroot}
 %make_install
+%define tizen_sign 1
+%define tizen_sign_base %{_prefix}/apps/org.tizen.data-provider-slave
+%define tizen_sign_level platform
+%define tizen_author_sign 1
+%define tizen_dist_sign 1
 mkdir -p %{buildroot}/%{_datarootdir}/license
 mkdir -p %{buildroot}%{app_data}
 
@@ -60,9 +66,7 @@ chmod 755 %{app_data}
 %files -n org.tizen.data-provider-slave
 %manifest org.tizen.data-provider-slave.manifest
 %defattr(-,root,root,-)
-%{_prefix}/apps/org.tizen.data-provider-slave/bin/data-provider-slave
-%{_prefix}/apps/org.tizen.data-provider-slave/bin/icon-provider-slave
-%{_prefix}/apps/org.tizen.data-provider-slave/res/edje/icon.edj
+%{_prefix}/apps/org.tizen.data-provider-slave
 %{_datarootdir}/packages/org.tizen.data-provider-slave.xml
 %{_datarootdir}/license/*
 %{_sysconfdir}/smack/accesses.d/org.tizen.data-provider-slave.rule
