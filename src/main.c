@@ -195,9 +195,10 @@ static bool app_create(void *data)
 	int ret;
 	int size = DEFAULT_FONT_SIZE;
 
+	DbgPrint("Scale factor: %lf\n", elm_config_scale_get());
+
 	ret = conf_loader();
 	DbgPrint("Configureation manager is initiated: %d\n", ret);
-	DbgPrint("Scale factor: %lf\n", elm_config_scale_get());
 
 	if (COM_CORE_THREAD)
 		setenv("PROVIDER_COM_CORE_THREAD", "true", 0);
@@ -220,10 +221,10 @@ static bool app_create(void *data)
 	DbgPrint("Content update monitor is initiated: %d\n", ret);
 
 	ret = vconf_notify_key_changed("db/setting/accessibility/font_name", font_changed_cb, NULL);
-	DbgPrint("System font is changed: %d\n", ret);
+	DbgPrint("System font changed callback is added: %d\n", ret);
 	
 	ret = system_settings_set_changed_cb(SYSTEM_SETTINGS_KEY_FONT_SIZE, font_size_cb, NULL);
-	DbgPrint("System font size is changed: %d\n", ret);
+	DbgPrint("System font size changed callback is added: %d\n", ret);
 
 	ret = vconf_notify_key_changed(VCONFKEY_SYSMAN_STIME, time_changed_cb, NULL);
 	DbgPrint("System time changed event callback added: %d\n", ret);
@@ -232,13 +233,13 @@ static bool app_create(void *data)
 	DbgPrint("MMC status changed event callback added: %d\n", ret);
 
 	s_info.font_name = vconf_get_str("db/setting/accessibility/font_name");
-	DbgPrint("Current font: %s\n", s_info.font_name);
+	DbgPrint("Current font is [%s]\n", s_info.font_name);
 
 	ret = system_settings_get_value_int(SYSTEM_SETTINGS_KEY_FONT_SIZE, &size);
-	DbgPrint("Get fontsize: %d\n", ret);
+	DbgPrint("Current font size get: %d\n", ret);
 
 	s_info.font_size = convert_font_size(size);
-	DbgPrint("Current size: %d\n", s_info.font_size);
+	DbgPrint("Current font size: %d\n", s_info.font_size);
 
 	return TRUE;
 }

@@ -44,6 +44,7 @@ ADD_DEFINITIONS("-DEXEC_NAME=\"${PROJECT_NAME}\"")
 ADD_DEFINITIONS("-DMASTER_PKGNAME=\"data-provider-master\"")
 ADD_DEFINITIONS("-DSLAVE_PKGNAME=\"org.tizen.data-provider-slave\"")
 ADD_DEFINITIONS("-DSOCKET_FILE=\"/opt/usr/share/live_magazine/.live.socket\"")
+ADD_DEFINITIONS("-DCONF_FILE=\"/usr/share/data-provider-master/conf.ini\"")
 
 ADD_DEFINITIONS("-DNDEBUG")
 #ADD_DEFINITIONS("-D_ENABLE_MCHECK")
