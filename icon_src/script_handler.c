@@ -515,7 +515,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 			if (evas_object_image_region_support_get(img)) {
 				evas_object_image_load_region_set(img, (w - part_w) / 2, (h - part_h) / 2, part_w, part_h);
 				evas_object_image_load_size_set(img, part_w, part_h);
-				evas_object_image_fill_set(img, 0, 0, part_w, part_h);
+				evas_object_image_filled_set(img, EINA_TRUE);
 				DbgPrint("Size: %dx%d (region: %dx%d - %dx%d)\n", w, h, (w - part_w) / 2, (h - part_h) / 2, part_w, part_h);
 			} else {
 				Ecore_Evas *ee;
@@ -533,6 +533,8 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 					free(child);
 					return LB_STATUS_ERROR_FAULT;
 				}
+
+				ecore_evas_alpha_set(ee, EINA_TRUE);
 
 				e = ecore_evas_get(ee);
 				if (!e) {
@@ -556,6 +558,9 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 					return LB_STATUS_ERROR_FAULT;
 				}
 
+				evas_object_image_alpha_set(src_img, EINA_TRUE);
+				evas_object_image_colorspace_set(src_img, EVAS_COLORSPACE_ARGB8888);
+        			evas_object_image_smooth_scale_set(src_img, EINA_TRUE);
 				evas_object_image_load_orientation_set(src_img, img_opt.orient);
 				evas_object_image_file_set(src_img, block->data, NULL);
 				err = evas_object_image_load_error_get(src_img);
