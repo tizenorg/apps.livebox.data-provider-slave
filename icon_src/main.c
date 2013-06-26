@@ -41,6 +41,8 @@
 #include <livebox-errno.h>
 #include <provider.h>
 
+#include <system_settings.h>
+
 #include <packet.h>
 #include <com-core.h>
 #include <com-core_packet.h>
@@ -423,22 +425,30 @@ static void font_changed_cb(keynode_t *node, void *user_data)
 {
 	char *font_name;
 
-	font_name = vconf_get_str("db/setting/accessibility/font_name");
-	if (!font_name) {
-		ErrPrint("Invalid font name (NULL)\n");
-		return;
-	}
-
-	if (s_info.font_name && !strcmp(s_info.font_name, font_name)) {
-		DbgPrint("Font is not changed (Old: %s(%p) <> New: %s(%p))\n", s_info.font_name, s_info.font_name, font_name, font_name);
-		free(font_name);
-		return;
-	}
-
 	if (s_info.font_name) {
+		font_name = vconf_get_str("db/setting/accessibility/font_name");
+		if (!font_name) {
+			ErrPrint("Invalid font name (NULL)\n");
+			return;
+		}
+
+		if (!strcmp(s_info.font_name, font_name)) {
+			DbgPrint("Font is not changed (Old: %s(%p) <> New: %s(%p))\n", s_info.font_name, s_info.font_name, font_name, font_name);
+			free(font_name);
+			return;
+		}
+
 		DbgPrint("Release old font name: %s(%p)\n", s_info.font_name, s_info.font_name);
 		free(s_info.font_name);
-		s_info.font_name = NULL;
+	} else {
+		int ret;
+
+		font_name = NULL;
+		ret = system_settings_get_value_string(SYSTEM_SETTINGS_KEY_FONT_TYPE, &font_name);
+		if (ret != SYSTEM_SETTINGS_ERROR_NONE || !font_name) {
+			ErrPrint("system settings: %d, font_name[%p]\n", ret, font_name);
+			return;
+		}
 	}
 
 	s_info.font_name = font_name;
@@ -485,6 +495,7 @@ static void app_terminate(void *data)
 	client_fini();
 
 	free(s_info.font_name);
+	s_info.font_name = NULL;
 	return;
 }
 
