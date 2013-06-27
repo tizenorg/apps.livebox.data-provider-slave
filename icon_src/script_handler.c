@@ -1340,6 +1340,7 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 			}
 
 			consuming_parsed_block(edje, lineno, block);
+			block = NULL;
 			state = UNKNOWN;
 			break;
 
