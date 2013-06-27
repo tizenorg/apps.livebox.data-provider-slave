@@ -749,6 +749,11 @@ int livebox_request_update_by_id(const char *filename)
 	Eina_List *l;
 	struct item *item;
 
+	if (so_current_op() != LIVEBOX_OP_UNKNOWN) {
+		ErrPrint("Current operation: %d\n", so_current_op());
+		return LB_STATUS_ERROR_INVALID;
+	}
+
 	EINA_LIST_FOREACH(s_info.item_list, l, item) {
 		if (!strcmp(item->inst->id, filename)) {
 			return append_pending_list(item);
@@ -762,6 +767,11 @@ int livebox_trigger_update_monitor(const char *filename, int is_pd)
 {
 	char *fname;
 	int ret;
+
+	if (so_current_op() != LIVEBOX_OP_UNKNOWN) {
+		ErrPrint("Current operation: %d\n", so_current_op());
+		return LB_STATUS_ERROR_INVALID;
+	}
 
 	if (is_pd) {
 		int len;

@@ -39,8 +39,10 @@ int errno;
 
 static struct info {
 	Eina_List *livebox_list;
+	enum current_operations current_op;
 } s_info = {
 	.livebox_list = NULL,
+	.current_op = LIVEBOX_OP_UNKNOWN,
 };
 
 static inline struct so_item *find_livebox(const char *pkgname)
@@ -522,12 +524,14 @@ HAPI int so_create(const char *pkgname, const char *id, const char *content_info
 
 	fault_mark_call(pkgname, id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	s_info.current_op = LIVEBOX_OP_CREATE;
 	if (item->adaptor.create)
 		ret = item->adaptor.create(pkgname, util_uri_to_path(id), content_info, cluster, category);
 	else if (item->livebox.create)
 		ret = item->livebox.create(util_uri_to_path(id), content_info, cluster, category);
 	else /*! \NOTE: This is not possible, but for the exceptional handling */
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(pkgname, id, __func__, USE_ALARM);
 
@@ -559,12 +563,14 @@ HAPI int so_destroy(struct instance *inst)
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	s_info.current_op = LIVEBOX_OP_DESTROY;
 	if (item->adaptor.destroy)
 		ret = item->adaptor.destroy(item->pkgname, util_uri_to_path(inst->id));
 	else if (item->livebox.destroy)
 		ret = item->livebox.destroy(util_uri_to_path(inst->id));
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -589,12 +595,16 @@ HAPI char *so_pinup(struct instance *inst, int pinup)
 		return NULL;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
+
+	s_info.current_op = LIVEBOX_OP_PINUP;
 	if (item->adaptor.pinup)
 		ret = item->adaptor.pinup(item->pkgname, util_uri_to_path(inst->id), pinup);
 	else if (item->livebox.pinup)
 		ret = item->livebox.pinup(util_uri_to_path(inst->id), pinup);
 	else
 		ret = NULL;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
+	
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	return ret;
 }
@@ -609,12 +619,16 @@ HAPI int so_is_pinned_up(struct instance *inst)
 		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
+
+	s_info.current_op = LIVEBOX_OP_IS_PINNED_UP;
 	if (item->adaptor.is_pinned_up)
 		ret = item->adaptor.is_pinned_up(item->pkgname, util_uri_to_path(inst->id));
 	else if (item->livebox.is_pinned_up)
 		ret = item->livebox.is_pinned_up(util_uri_to_path(inst->id));
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
+
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	return ret;
 }
@@ -630,12 +644,14 @@ HAPI int so_is_updated(struct instance *inst)
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	s_info.current_op = LIVEBOX_OP_NEED_TO_UPDATE;
 	if (item->adaptor.is_updated)
 		ret = item->adaptor.is_updated(item->pkgname, util_uri_to_path(inst->id));
 	else if (item->livebox.is_updated)
 		ret = item->livebox.is_updated(util_uri_to_path(inst->id));
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -653,12 +669,14 @@ HAPI int so_need_to_destroy(struct instance *inst)
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	s_info.current_op = LIVEBOX_OP_NEED_TO_DESTROY;
 	if (item->adaptor.need_to_destroy)
 		ret = item->adaptor.need_to_destroy(item->pkgname, util_uri_to_path(inst->id));
 	else if (item->livebox.need_to_destroy)
 		ret = item->livebox.need_to_destroy(util_uri_to_path(inst->id));
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -676,12 +694,14 @@ HAPI int so_update(struct instance *inst)
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	s_info.current_op = LIVEBOX_OP_UPDATE_CONTENT;
 	if (item->adaptor.update_content)
 		ret = item->adaptor.update_content(item->pkgname, util_uri_to_path(inst->id));
 	else if (item->livebox.update_content)
 		ret = item->livebox.update_content(util_uri_to_path(inst->id));
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	return ret;
@@ -698,13 +718,15 @@ HAPI int so_clicked(struct instance *inst, const char *event, double timestamp, 
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
-	DbgPrint("CLICKED: %lf\n", util_timestamp());
+	DbgPrint("PERF_DBOX\n");
+	s_info.current_op = LIVEBOX_OP_CLICKED;
 	if (item->adaptor.clicked)
 		ret = item->adaptor.clicked(item->pkgname, util_uri_to_path(inst->id), event, timestamp, x, y);
 	else if (item->livebox.clicked)
 		ret = item->livebox.clicked(util_uri_to_path(inst->id), event, timestamp, x, y);
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -722,12 +744,14 @@ HAPI int so_script_event(struct instance *inst, const char *emission, const char
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	s_info.current_op = LIVEBOX_OP_CONTENT_EVENT;
 	if (item->adaptor.script_event)
 		ret = item->adaptor.script_event(item->pkgname, util_uri_to_path(inst->id), emission, source, event_info);
 	else if (item->livebox.script_event)
 		ret = item->livebox.script_event(util_uri_to_path(inst->id), emission, source, event_info);
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -750,12 +774,14 @@ HAPI int so_resize(struct instance *inst, int w, int h)
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	s_info.current_op = LIVEBOX_OP_RESIZE;
 	if (item->adaptor.resize)
 		ret = item->adaptor.resize(item->pkgname, util_uri_to_path(inst->id), type);
 	else if (item->livebox.resize)
 		ret = item->livebox.resize(util_uri_to_path(inst->id), type);
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 
@@ -779,12 +805,14 @@ HAPI int so_create_needed(const char *pkgname, const char *cluster, const char *
 
 	fault_mark_call(item->pkgname, __func__, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	s_info.current_op = LIVEBOX_OP_NEED_TO_CREATE;
 	if (item->adaptor.create_needed)
 		ret = item->adaptor.create_needed(pkgname, cluster, category);
 	else if (item->livebox.create_needed)
 		ret = item->livebox.create_needed(cluster, category);
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, __func__, __func__, USE_ALARM);
 
@@ -815,12 +843,14 @@ HAPI int so_change_group(struct instance *inst, const char *cluster, const char 
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	s_info.current_op = LIVEBOX_OP_CHANGE_GROUP;
 	if (item->adaptor.change_group)
 		ret = item->adaptor.change_group(item->pkgname, util_uri_to_path(inst->id), cluster, category);
 	else if (item->livebox.change_group)
 		ret = item->livebox.change_group(util_uri_to_path(inst->id), cluster, category);
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	if (ret >= 0) {
@@ -851,12 +881,14 @@ HAPI int so_get_output_info(struct instance *inst, int *w, int *h, double *prior
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
 
+	s_info.current_op = LIVEBOX_OP_GET_INFO;
 	if (item->adaptor.get_output_info)
 		ret = item->adaptor.get_output_info(item->pkgname, util_uri_to_path(inst->id), w, h, priority, content, title);
 	else if (item->livebox.get_output_info)
 		ret = item->livebox.get_output_info(util_uri_to_path(inst->id), w, h, priority, content, title);
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	if (ret >= 0) {
@@ -897,15 +929,23 @@ HAPI int so_sys_event(struct instance *inst, int event)
 		return LB_STATUS_ERROR_INVALID;
 
 	fault_mark_call(item->pkgname, inst->id, __func__, USE_ALARM, DEFAULT_LIFE_TIMER);
+
+	s_info.current_op = LIVEBOX_OP_SYSTEM_EVENT;
 	if (item->adaptor.sys_event)
 		ret = item->adaptor.sys_event(item->pkgname, util_uri_to_path(inst->id), event);
 	else if (item->livebox.sys_event)
 		ret = item->livebox.sys_event(util_uri_to_path(inst->id), event);
 	else
 		ret = LB_STATUS_ERROR_NOT_IMPLEMENTED;
+	s_info.current_op = LIVEBOX_OP_UNKNOWN;
 
 	fault_unmark_call(item->pkgname, inst->id, __func__, USE_ALARM);
 	return ret;
+}
+
+HAPI enum current_operations so_current_op(void)
+{
+	return s_info.current_op;
 }
 
 /* End of a file */

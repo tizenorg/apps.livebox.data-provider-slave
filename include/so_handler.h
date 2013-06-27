@@ -108,6 +108,24 @@ struct so_item {
 	} adaptor;
 };
 
+enum current_operations {
+	LIVEBOX_OP_UNKNOWN,
+	LIVEBOX_OP_CREATE,
+	LIVEBOX_OP_RESIZE,
+	LIVEBOX_OP_CONTENT_EVENT,
+	LIVEBOX_OP_NEED_TO_UPDATE,
+	LIVEBOX_OP_NEED_TO_DESTROY,
+	LIVEBOX_OP_NEED_TO_CREATE,
+	LIVEBOX_OP_CHANGE_GROUP,
+	LIVEBOX_OP_GET_INFO,
+	LIVEBOX_OP_UPDATE_CONTENT,
+	LIVEBOX_OP_CLICKED,
+	LIVEBOX_OP_SYSTEM_EVENT,
+	LIVEBOX_OP_PINUP,
+	LIVEBOX_OP_IS_PINNED_UP,
+	LIVEBOX_OP_DESTROY,
+};
+
 extern struct instance *so_find_instance(const char *pkgname, const char *filename);
 extern int so_create(const char *pkgname, const char *filename, const char *content_info, int timeout, int has_livebox_script, const char *cluster, const char *category, const char *abi, struct instance **inst);
 extern int so_is_updated(struct instance *inst);
@@ -123,5 +141,7 @@ extern int so_get_output_info(struct instance *inst, int *w, int *h, double *pri
 extern char *so_pinup(struct instance *inst, int pinup);
 extern int so_is_pinned_up(struct instance *inst);
 extern int so_sys_event(struct instance *inst, int event);
+
+extern enum current_operations so_current_op(void);
 
 /* End of a file */
