@@ -35,6 +35,8 @@
 #include "fault.h"
 #include "util.h"
 
+#define IS_LB_SHOWN(itm) (!(itm)->inst->item->has_livebox_script || ((itm)->inst->item->has_livebox_script && (itm)->is_lb_show))
+
 int errno;
 
 struct item {
@@ -116,10 +118,8 @@ static inline int pd_is_opened(const char *pkgname)
 
 	i = 0;
 	EINA_LIST_FOREACH(s_info.pd_list, l, tmp) {
-		if (pkgname && !strcmp(pkgname, tmp)) {
-			DbgPrint("PD(%s) is opened\n", pkgname);
+		if (pkgname && !strcmp(pkgname, tmp))
 			return 1;
-		}
 
 		i++;
 	}
@@ -139,7 +139,6 @@ static Eina_Bool pd_open_pended_cmd_consumer_cb(void *data)
 		return ECORE_CALLBACK_RENEW;
 
 	s_info.pd_open_pending_list = eina_list_remove(s_info.pd_open_pending_list, item);
-	DbgPrint("Consuming pended item: %s\n", item->inst->id);
 	/*!
 	 * \note
 	 * To prevent from checking the is_updated function
@@ -150,7 +149,6 @@ static Eina_Bool pd_open_pended_cmd_consumer_cb(void *data)
 
 cleanout:
 	s_info.pd_open_pending_timer = NULL;
-	DbgPrint("open pd pending list exhausted\n");
 	return ECORE_CALLBACK_CANCEL;
 }
 
@@ -166,7 +164,6 @@ static Eina_Bool pended_cmd_consumer_cb(void *data)
 		return ECORE_CALLBACK_RENEW;
 
 	s_info.pending_list = eina_list_remove(s_info.pending_list, item);
-	DbgPrint("Consuming pended item: %s\n", item->inst->id);
 	/*!
 	 * \note
 	 * To prevent from checking the is_updated function
@@ -178,7 +175,6 @@ static Eina_Bool pended_cmd_consumer_cb(void *data)
 cleanout:
 	s_info.pending_timer = NULL;
 	s_info.pending_timer_freezed = 0;
-	DbgPrint("pending list exhausted\n");
 	return ECORE_CALLBACK_CANCEL;
 }
 
@@ -197,10 +193,8 @@ static inline __attribute__((always_inline)) int activate_pending_consumer(void)
 	 * Do not increase the freezed counter.
 	 * Just freeze the timer.
 	 */
-	if (s_info.pending_timer_freezed) {
-		DbgPrint("Pending timer created and freezed\n");
+	if (s_info.pending_timer_freezed)
 		ecore_timer_freeze(s_info.pending_timer);
-	}
 
 	return 0;
 }
@@ -213,7 +207,6 @@ static inline void deactivate_pending_consumer(void)
 	ecore_timer_del(s_info.pending_timer);
 	s_info.pending_timer = NULL;
 	s_info.pending_timer_freezed = 0;
-	DbgPrint("Clear the pending timer\n");
 }
 
 static inline void deactivate_pd_open_pending_consumer(void)
@@ -223,7 +216,6 @@ static inline void deactivate_pd_open_pending_consumer(void)
 
 	ecore_timer_del(s_info.pd_open_pending_timer);
 	s_info.pd_open_pending_timer = NULL;
-	DbgPrint("Clear the open_pd_pending timer\n");
 }
 
 static inline int __attribute__((always_inline)) activate_pd_open_pending_consumer(void)
@@ -256,15 +248,11 @@ static inline void migrate_to_pd_open_pending_list(const char *pkgname)
 		cnt++;
 	}
 
-	if (s_info.pd_open_pending_list) {
-		DbgPrint("Activate PD open pending consumer (%s)\n", pkgname);
+	if (s_info.pd_open_pending_list)
 		activate_pd_open_pending_consumer();
-	}
 
 	if (!s_info.pending_list)
 		deactivate_pending_consumer();
-
-	DbgPrint("%d items are migrated\n", cnt);
 }
 
 static inline void migrate_to_pending_list(const char *pkgname)
@@ -288,8 +276,6 @@ static inline void migrate_to_pending_list(const char *pkgname)
 
 	if (!s_info.pd_open_pending_list)
 		deactivate_pd_open_pending_consumer();
-
-	DbgPrint("%d items are migrated\n", cnt);
 }
 
 static inline int append_pending_list(struct item *item)
@@ -300,7 +286,6 @@ static inline int append_pending_list(struct item *item)
 			return LB_STATUS_ERROR_EXIST;
 		}
 
-		DbgPrint("Activate PD open pending consumer (%s)\n", item->inst->item->pkgname);
 		if (activate_pd_open_pending_consumer() < 0) {
 			ErrPrint("Failed to activate PD open pending consumer\n");
 			return LB_STATUS_ERROR_FAULT;
@@ -336,16 +321,13 @@ static inline void timer_thaw(struct item *item)
 	pending = ecore_timer_pending_get(item->timer);
 	delay = util_time_delay_for_compensation(period) - pending;
 	ecore_timer_delay(item->timer, delay);
-	DbgPrint("Compensated: %lf, Instance %s resume timer\n", delay, item->inst->item->pkgname);
 
 	if (item->sleep_at == 0.0f)
 		return;
 
 	sleep_time = util_timestamp() - item->sleep_at;
-	if (sleep_time > pending) {
-		DbgPrint("Update time elapsed\n");
+	if (sleep_time > pending)
 		(void)updator_cb(item);
-	}
 
 	item->sleep_at = 0.0f;
 }
@@ -369,7 +351,6 @@ static inline void timer_freeze(struct item *item)
 	}
 
 	item->sleep_at = (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0f;
-	DbgPrint("Instance %s freeze timer\n", item->inst->item->pkgname);
 }
 
 static inline void update_monitor_cnt(struct item *item)
@@ -388,10 +369,22 @@ static inline void update_monitor_cnt(struct item *item)
 	 * And handling this heavy updating from the
 	 * file update callback.
 	 */
-	if (interval >= MINIMUM_UPDATE_INTERVAL)
-		item->monitor_cnt++;
-	else
+	if (interval >= MINIMUM_UPDATE_INTERVAL) {
+		if (s_info.update == item) {
+			/*!
+			 * \note
+			 * If already in updating mode,
+			 * reset the monitor_cnt to 1,
+			 * all updated event will be merged into A inotify event
+			 */
+			DbgPrint("While waiting updated event, content is updated [%s]\n", item->inst->id);
+			item->monitor_cnt = 1;
+		} else {
+			item->monitor_cnt++;
+		}
+	} else {
 		item->heavy_updating = 1;
+	}
 
 	item->update_interval = now;
 }
@@ -493,14 +486,14 @@ static int file_updated_cb(const char *filename, void *data, int over)
 		return EXIT_SUCCESS; /*!< To keep the callback */
 	}
 
-	if (!item->inst->item->has_livebox_script || (item->inst->item->has_livebox_script && item->is_lb_show)) {
+	if (IS_LB_SHOWN(item)) {
 		provider_send_updated(item->inst->item->pkgname, item->inst->id,
 					item->inst->w, item->inst->h, item->inst->priority, content, title);
 	} else {
-		DbgPrint("Livebox script is not ready yet\n");
 		item->is_lb_updated++;
 	}
 
+	DbgPrint("CONTENT %s is updated [%d]\n", filename, item->is_lb_updated);
 	return output_handler(item);
 }
 
@@ -546,7 +539,7 @@ static Eina_Bool update_timeout_cb(void *data)
 
 	item = data;
 
-	DbgPrint("UPDATE TIMEOUT ========> %s - %s\n", item->inst->item->pkgname, item->inst->id);
+	ErrPrint("UPDATE TIMEOUT ========> %s - %s\n", item->inst->item->pkgname, item->inst->id);
 
 	if (s_info.update != item)
 		ErrPrint("Updating item is not matched\n");
@@ -567,6 +560,12 @@ static Eina_Bool updator_cb(void *data)
 	item = data;
 
 	if (item->monitor) {/*!< If this item is already in update process */
+		return ECORE_CALLBACK_RENEW;
+	}
+
+	if (!IS_LB_SHOWN(item)) {
+		DbgPrint("%s is not shown yet. delaying updates\n", item->inst->item->pkgname);
+		(void)append_pending_list(item);
 		return ECORE_CALLBACK_RENEW;
 	}
 
@@ -597,6 +596,13 @@ static Eina_Bool updator_cb(void *data)
 		return ECORE_CALLBACK_RENEW;
 	}
 
+	ret = so_update(item->inst);
+	if (ret < 0) {
+		ecore_timer_del(item->monitor);
+		item->monitor = NULL;
+		return ECORE_CALLBACK_RENEW;
+	}
+
 	/*!
 	 * \note
 	 * Counter of the event monitor is only used for asynchronous content updating,
@@ -605,18 +611,6 @@ static Eina_Bool updator_cb(void *data)
 	 */
 	item->monitor_cnt = 1;
 
-	s_info.update = item;
-
-	ret = so_update(item->inst);
-	if (ret < 0) {
-		item->monitor_cnt--;
-
-		ecore_timer_del(item->monitor);
-		item->monitor = NULL;
-		s_info.update = NULL;
-		return ECORE_CALLBACK_RENEW;
-	}
-
 	/*!
 	 * \note
 	 * While waiting the Callback function call,
@@ -624,12 +618,27 @@ static Eina_Bool updator_cb(void *data)
 	 */
 	fault_mark_call(item->inst->item->pkgname, item->inst->id, "update,crashed", NO_ALARM, DEFAULT_LIFE_TIMER);
 
-	if (ret & NEED_TO_SCHEDULE) {
+	if (ret & NEED_TO_SCHEDULE)
 		(void)append_pending_list(item);
+
+	if (ret & OUTPUT_UPDATED) {
+		/*!
+		 * \NOTE 
+		 * In this case, there is potential issue
+		 * 1. User added update CALLBACK -> Inotify event (Only once)
+		 *    > We have to detect this case. Is it possible to be a user callback called faster than inotify event handler?
+		 * 2. Inotify event -> User added update CALLBACK -> Inotify event
+		 *    > Okay. What we want is this.
+		 */
+		update_monitor_cnt(item);
 	}
 
-	if (ret & OUTPUT_UPDATED)
-		update_monitor_cnt(item);
+	/*
+	 * \NOTE
+	 * This should be updated after "update_monitor_cnt" function call,
+	 * because the update_monitor_cnt function will see the s_info.update variable,
+	 */
+	s_info.update = item;
 
 	return ECORE_CALLBACK_RENEW;
 }
@@ -666,7 +675,6 @@ static inline int add_desc_update_monitor(const char *id, struct item *item)
 	}
 
 	snprintf(filename, len, "%s.desc", util_uri_to_path(id));
-	DbgPrint("Add DESC monitor: %s\n", filename);
 	return update_monitor_add_update_cb(filename, desc_updated_cb, item);
 }
 
@@ -844,7 +852,6 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 		return ret;
 	}
 
-	DbgPrint("Content: [%s]\n", content_info);
 	create_ret = so_create(pkgname, id, content_info, timeout, has_livebox_script, cluster, category, abi, &inst);
 	if (create_ret < 0) {
 		update_monitor_del(id,  item);
@@ -1120,10 +1127,9 @@ HAPI int lb_script_event(const char *pkgname, const char *id, const char *emissi
 	if (emission && source && !strcmp(source, id)) {
 		if (item->inst->item->has_livebox_script) {
 			if (!strcmp(emission, "lb,show")) {
-				DbgPrint("Livebox(%s) script is ready now\n", id);
 				item->is_lb_show = 1;
 
-				DbgPrint("Updated %d times, (content: %s), (title: %s)\n", item->is_lb_updated, item->inst->content, item->inst->title);
+				DbgPrint("[%s] Updated %d times, (content: %s), (title: %s)\n", id, item->is_lb_updated, item->inst->content, item->inst->title);
 				if (item->is_lb_updated) {
 					provider_send_updated(item->inst->item->pkgname, item->inst->id,
 								item->inst->w, item->inst->h, item->inst->priority, item->inst->content, item->inst->title);
@@ -1328,7 +1334,6 @@ HAPI int lb_delete_all_deleteme(void)
 	struct item *item;
 	int cnt = 0;
 
-	DbgPrint("Delete all deleteme\n");
 	EINA_LIST_FOREACH_SAFE(s_info.item_list, l, n, item) {
 		if (!item->deleteme)
 			continue;
@@ -1341,7 +1346,7 @@ HAPI int lb_delete_all_deleteme(void)
 		cnt++;
 	}
 
-	DbgPrint("Deleteme: %d\n", cnt);
+	DbgPrint("Delete all deleteme: %d\n", cnt);
 	return LB_STATUS_SUCCESS;
 }
 
@@ -1377,10 +1382,8 @@ HAPI void lb_pause_all(void)
 			continue;
 		}
 
-		if (item->is_paused) {
-			DbgPrint("Instance %s is already paused\n", item->inst->id);
+		if (item->is_paused)
 			continue;
-		}
 
 		timer_freeze(item);
 
@@ -1403,10 +1406,8 @@ HAPI void lb_resume_all(void)
 			continue;
 		}
 
-		if (item->is_paused) {
-			DbgPrint("Instance %s is still paused\n", item->inst->id);
+		if (item->is_paused)
 			continue;
-		}
 
 		timer_thaw(item);
 
@@ -1441,10 +1442,8 @@ HAPI int lb_pause(const char *pkgname, const char *id)
 
 	item->is_paused = 1;
 
-	if (s_info.paused) {
-		DbgPrint("Already paused: %s\n", item->inst->id);
+	if (s_info.paused)
 		return LB_STATUS_SUCCESS;
-	}
 
 	timer_freeze(item);
 
@@ -1480,10 +1479,8 @@ HAPI int lb_resume(const char *pkgname, const char *id)
 
 	item->is_paused = 0;
 
-	if (s_info.paused) {
-		DbgPrint("Instance %s is still paused\n", item->inst->id);
+	if (s_info.paused)
 		return LB_STATUS_SUCCESS;
-	}
 
 	timer_thaw(item);
 

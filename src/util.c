@@ -185,7 +185,6 @@ HAPI double util_time_delay_for_compensation(double period)
 	remain = curtime % _period;
 
 	ret = (double)remain / (double)1000000;
-	DbgPrint("curtime: %llu, _period: %llu (%lf), remain: %llu, ret: %lf, result: %lf\n", curtime, _period, period, remain, ret, period - ret);
 	return period - ret;
 }
 
@@ -200,7 +199,6 @@ HAPI void *util_timer_add(double interval, Eina_Bool (*cb)(void *data), void *da
 
 	delay = util_time_delay_for_compensation(interval) - interval;
 	ecore_timer_delay(timer, delay);
-	DbgPrint("Compensate timer: %lf\n", delay);
 
 	return timer;
 }
