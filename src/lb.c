@@ -493,7 +493,6 @@ static int file_updated_cb(const char *filename, void *data, int over)
 		item->is_lb_updated++;
 	}
 
-	DbgPrint("CONTENT %s is updated [%d]\n", filename, item->is_lb_updated);
 	return output_handler(item);
 }
 
