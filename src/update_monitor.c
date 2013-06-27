@@ -60,9 +60,6 @@ static Eina_Bool monitor_cb(void *data, Ecore_Fd_Handler *handler)
 {
 	int fd;
 	int read_size;
-	Eina_List *l;
-	Eina_List *n;
-	struct cb_item *item;
 	char *buffer;
 	register int i;
 	struct inotify_event *evt;
@@ -128,21 +125,9 @@ static Eina_Bool monitor_cb(void *data, Ecore_Fd_Handler *handler)
 		}
 
 		if (evt->mask & (IN_DELETE | IN_MOVED_FROM)) {
-			EINA_LIST_FOREACH_SAFE(s_info.delete_list, l, n, item) {
-				if (!strcmp(filename, item->filename) && item->cb(filename, item->data, !!(evt->mask & IN_Q_OVERFLOW)) == EXIT_FAILURE) {
-					s_info.delete_list = eina_list_remove_list(s_info.delete_list, l);
-					free(item->filename);
-					free(item);
-				}
-			}
+			update_monitor_trigger_delete_cb(filename, !!(evt->mask & IN_Q_OVERFLOW));
 		} else if (evt->mask & (IN_CLOSE_WRITE | IN_MOVED_TO)) {
-			EINA_LIST_FOREACH_SAFE(s_info.update_list, l, n, item) {
-				if (!strcmp(filename, item->filename) && item->cb(filename, item->data, !!(evt->mask & IN_Q_OVERFLOW)) == EXIT_FAILURE) {
-					s_info.update_list = eina_list_remove_list(s_info.update_list, l);
-					free(item->filename);
-					free(item);
-				}
-			}
+			update_monitor_trigger_update_cb(filename, !!(evt->mask & IN_Q_OVERFLOW));
 		}
 
 		free(filename);
@@ -212,6 +197,44 @@ HAPI int update_monitor_fini(void)
 	}
 
 	return LB_STATUS_SUCCESS;
+}
+
+HAPI int update_monitor_trigger_update_cb(const char *filename, int over)
+{
+	Eina_List *l;
+	Eina_List *n;
+	struct cb_item *item;
+	int cnt = 0;
+
+	EINA_LIST_FOREACH_SAFE(s_info.update_list, l, n, item) {
+		if (!strcmp(filename, item->filename) && item->cb(filename, item->data, over) == EXIT_FAILURE) {
+			s_info.update_list = eina_list_remove_list(s_info.update_list, l);
+			free(item->filename);
+			free(item);
+			cnt++;
+		}
+	}
+
+	return cnt == 0 ? LB_STATUS_ERROR_INVALID : LB_STATUS_SUCCESS;
+}
+
+HAPI int update_monitor_trigger_delete_cb(const char *filename, int over)
+{
+	Eina_List *l;
+	Eina_List *n;
+	struct cb_item *item;
+	int cnt = 0;
+
+	EINA_LIST_FOREACH_SAFE(s_info.delete_list, l, n, item) {
+		if (!strcmp(filename, item->filename) && item->cb(filename, item->data, over) == EXIT_FAILURE) {
+			s_info.delete_list = eina_list_remove_list(s_info.delete_list, l);
+			free(item->filename);
+			free(item);
+			cnt++;
+		}
+	}
+
+	return cnt == 0 ? LB_STATUS_ERROR_INVALID : LB_STATUS_SUCCESS;
 }
 
 HAPI int update_monitor_add_update_cb(const char *filename,

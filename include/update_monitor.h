@@ -21,5 +21,7 @@ extern int update_monitor_add_update_cb(const char *filename, int (*cb)(const ch
 extern int update_monitor_add_delete_cb(const char *filename, int (*cb)(const char *filename, void *data, int over), void *data);
 extern void *update_monitor_del_update_cb(const char *filename, int (*cb)(const char *filename, void *data, int over));
 extern void *update_monitor_del_delete_cb(const char *filename, int (*cb)(const char *filename, void *data, int over));
+extern int update_monitor_trigger_update_cb(const char *filename, int over);
+extern int update_monitor_trigger_delete_cb(const char *filename, int over);
 
 // End of a file

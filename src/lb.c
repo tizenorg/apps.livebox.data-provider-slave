@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h> /* exit */
 #include <errno.h>
+#include <unistd.h> /* access */
 
 #include <Ecore.h>
 #include <Eina.h>
@@ -755,6 +756,41 @@ int livebox_request_update_by_id(const char *filename)
 	}
 
 	return LB_STATUS_ERROR_NOT_EXIST;
+}
+
+int livebox_trigger_update_monitor(const char *filename, int is_pd)
+{
+	char *fname;
+	int ret;
+
+	if (is_pd) {
+		int len;
+		len = strlen(filename) + strlen(".desc");
+
+		fname = malloc(len + 1);
+		if (!fname) {
+			ErrPrint("Heap: %s\n", strerror(errno));
+			return LB_STATUS_ERROR_MEMORY;
+		}
+
+		snprintf(fname, len, "%s.desc", filename);
+	} else {
+		fname = strdup(filename);
+		if (!fname) {
+			ErrPrint("Heap: %s\n", strerror(errno));
+			return LB_STATUS_ERROR_MEMORY;
+		}
+	}
+
+	if (access(fname, R_OK | W_OK) != 0) {
+		ErrPrint("access: %s (%s)\n", fname, strerror(errno));
+		ret = LB_STATUS_ERROR_IO;
+	} else {
+		ret = update_monitor_trigger_update_cb(fname, 0);
+	}
+
+	free(fname);
+	return ret;
 }
 
 HAPI int lb_open_pd(const char *pkgname)

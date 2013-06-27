@@ -53,5 +53,6 @@ extern int lb_delete_all_deleteme(void);
  */
 extern const char *livebox_find_pkgname(const char *filename);
 extern int livebox_request_update_by_id(const char *filename);
+extern int livebox_trigger_update_monitor(const char *id, int is_pd);
 
 /* End of a file */
