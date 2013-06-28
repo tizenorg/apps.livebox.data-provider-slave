@@ -279,6 +279,18 @@ static inline void migrate_to_pending_list(const char *pkgname)
 		deactivate_pd_open_pending_consumer();
 }
 
+static inline int is_pended_item(struct item *item)
+{
+	struct item *in_item;
+	if (pd_is_opened(item->inst->item->pkgname) == 1) {
+		in_item = eina_list_data_find(s_info.pd_open_pending_list, item);
+	} else {
+		in_item = eina_list_data_find(s_info.pending_list, item);
+	}
+
+	return (in_item == item);
+}
+
 static inline int append_pending_list(struct item *item)
 {
 	if (pd_is_opened(item->inst->item->pkgname) == 1) {
@@ -489,12 +501,29 @@ static int file_updated_cb(const char *filename, void *data, int over)
 
 	if (IS_LB_SHOWN(item)) {
 		provider_send_updated(item->inst->item->pkgname, item->inst->id,
-					item->inst->w, item->inst->h, item->inst->priority, content, title);
+					item->inst->w, item->inst->h, item->inst->priority,
+					content, title);
 	} else {
 		item->is_lb_updated++;
 	}
 
 	return output_handler(item);
+}
+
+static void reset_lb_updated_flag(struct item *item)
+{
+	if (!item->is_lb_updated)
+		return;
+
+	DbgPrint("[%s] Updated %d times, (content: %s), (title: %s)\n",
+			item->inst->id, item->is_lb_updated,
+			item->inst->content, item->inst->title);
+
+	provider_send_updated(item->inst->item->pkgname, item->inst->id,
+			item->inst->w, item->inst->h, item->inst->priority,
+			item->inst->content, item->inst->title);
+
+	item->is_lb_updated = 0;
 }
 
 static inline int clear_from_pd_open_pending_list(struct item *item)
@@ -580,6 +609,7 @@ static Eina_Bool updator_cb(void *data)
 			return ECORE_CALLBACK_CANCEL;
 		}
 
+		reset_lb_updated_flag(item);
 		return ECORE_CALLBACK_RENEW;
 	}
 
@@ -600,6 +630,7 @@ static Eina_Bool updator_cb(void *data)
 	if (ret < 0) {
 		ecore_timer_del(item->monitor);
 		item->monitor = NULL;
+		reset_lb_updated_flag(item);
 		return ECORE_CALLBACK_RENEW;
 	}
 
@@ -1174,12 +1205,8 @@ HAPI int lb_script_event(const char *pkgname, const char *id, const char *emissi
 			if (!strcmp(emission, "lb,show")) {
 				item->is_lb_show = 1;
 
-				DbgPrint("[%s] Updated %d times, (content: %s), (title: %s)\n", id, item->is_lb_updated, item->inst->content, item->inst->title);
-				if (item->is_lb_updated) {
-					provider_send_updated(item->inst->item->pkgname, item->inst->id,
-								item->inst->w, item->inst->h, item->inst->priority, item->inst->content, item->inst->title);
-					item->is_lb_updated = 0;
-				}
+				if (item->is_lb_updated && !is_pended_item(item))
+					reset_lb_updated_flag(item);
 
 				source = util_uri_to_path(source);
 			} else if (!strcmp(emission, "lb,hide")) {
