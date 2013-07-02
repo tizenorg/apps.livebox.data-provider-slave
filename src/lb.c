@@ -51,6 +51,8 @@ struct item {
 	int is_paused; /* 1 is paused, 0 is resumed */
 	double sleep_at;
 
+	unsigned int updated_in_pause;
+
 	int is_lb_show;
 	int is_pd_show;
 	int is_lb_updated;
@@ -593,10 +595,18 @@ static Eina_Bool updator_cb(void *data)
 	}
 
 	if (!IS_LB_SHOWN(item)) {
-		DbgPrint("%s is not shown yet. delaying updates\n", item->inst->item->pkgname);
+		DbgPrint("%s is not shown yet. make delay for updates\n", item->inst->item->pkgname);
 		(void)append_pending_list(item);
 		return ECORE_CALLBACK_RENEW;
 	}
+
+	if (item->is_paused) {
+		item->updated_in_pause++;
+		DbgPrint("%s is paused[%d]. make delay for updating\n", item->inst->item->pkgname, item->updated_in_pause);
+		return ECORE_CALLBACK_RENEW;
+	}
+
+	item->updated_in_pause = 0;
 
 	ret = so_is_updated(item->inst);
 	if (ret <= 0) {
@@ -1484,6 +1494,11 @@ HAPI void lb_resume_all(void)
 		timer_thaw(item);
 
 		lb_sys_event(item->inst, item, LB_SYS_EVENT_RESUMED);
+
+		if (item->updated_in_pause) {
+			(void)append_pending_list(item);
+			item->updated_in_pause = 0;
+		}
 	}
 }
 
@@ -1557,6 +1572,12 @@ HAPI int lb_resume(const char *pkgname, const char *id)
 	timer_thaw(item);
 
 	lb_sys_event(inst, item, LB_SYS_EVENT_RESUMED);
+
+	if (item->updated_in_pause) {
+		(void)append_pending_list(item);
+		item->updated_in_pause = 0;
+	}
+
 	return LB_STATUS_SUCCESS;
 }
 
