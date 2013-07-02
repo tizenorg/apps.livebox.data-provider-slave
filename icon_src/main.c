@@ -89,6 +89,11 @@ int livebox_request_update_by_id(const char *filename)
 	return LB_STATUS_ERROR_NOT_EXIST;
 }
 
+int livebox_trigger_update_monitor(const char *id, int is_pd)
+{
+	return LB_STATUS_ERROR_INVALID;
+}
+
 static inline Evas *create_virtual_canvas(int w, int h)
 {
         Ecore_Evas *internal_ee;
