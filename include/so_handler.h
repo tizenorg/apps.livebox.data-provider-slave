@@ -123,7 +123,7 @@ enum current_operations {
 	LIVEBOX_OP_SYSTEM_EVENT,
 	LIVEBOX_OP_PINUP,
 	LIVEBOX_OP_IS_PINNED_UP,
-	LIVEBOX_OP_DESTROY,
+	LIVEBOX_OP_DESTROY
 };
 
 extern struct instance *so_find_instance(const char *pkgname, const char *filename);
