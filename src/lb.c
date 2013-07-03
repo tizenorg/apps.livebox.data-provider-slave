@@ -293,7 +293,7 @@ static inline int is_pended_item(struct item *item)
 	return (in_item == item);
 }
 
-static inline int append_pending_list(struct item *item)
+static int append_pending_list(struct item *item)
 {
 	if (pd_is_opened(item->inst->item->pkgname) == 1) {
 		if (eina_list_data_find(s_info.pd_open_pending_list, item) == item) {
