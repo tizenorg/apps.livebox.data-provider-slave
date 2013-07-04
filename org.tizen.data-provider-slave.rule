@@ -22,6 +22,6 @@ org.tizen.data-provider-slave dali x
 org.tizen.data-provider-slave pulseaudio rwxat
 org.tizen.data-provider-slave pkgmgr::db rw
 e17 org.tizen.data-provider-slave rwx
-com.samsung.app-tray org.tizen.data-provider-slave rx
+org.tizen.app-tray org.tizen.data-provider-slave rx
 dbus org.tizen.data-provider-slave rwx
 org.tizen.data-provider-slave sound_server rw
