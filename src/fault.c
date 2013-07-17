@@ -118,16 +118,22 @@ HAPI int fault_init(void)
 	act.sa_sigaction = signal_handler;
 	act.sa_flags = SA_SIGINFO;
 
-	sigemptyset(&act.sa_mask);
+	if (sigemptyset(&act.sa_mask) != 0)
+		ErrPrint("Failed to init signal: %s\n", strerror(errno));
 
-	sigaddset(&act.sa_mask, SIGUSR1);
-	sigaddset(&act.sa_mask, SIGALRM);
+	if (sigaddset(&act.sa_mask, SIGUSR1) != 0)
+		ErrPrint("Failed to add set: %s\n", strerror(errno));
+	if (sigaddset(&act.sa_mask, SIGALRM) != 0)
+		ErrPrint("Failed to add set: %s\n", strerror(errno));
 
 	ecore_abort = getenv("ECORE_ERROR_ABORT");
 	if (!ecore_abort || ecore_abort[0] != '1') {
-		sigaddset(&act.sa_mask, SIGSEGV);
-		sigaddset(&act.sa_mask, SIGABRT);
-		sigaddset(&act.sa_mask, SIGILL);
+		if (sigaddset(&act.sa_mask, SIGSEGV) != 0)
+			ErrPrint("Failed to add set: %s\n", strerror(errno));
+		if (sigaddset(&act.sa_mask, SIGABRT) != 0)
+			ErrPrint("Failed to add set: %s\n", strerror(errno));
+		if (sigaddset(&act.sa_mask, SIGILL) != 0)
+			ErrPrint("Failed to add set: %s\n", strerror(errno));
 
 		if (sigaction(SIGSEGV, &act, NULL) < 0)
 			ErrPrint("Failed to install the SEGV handler\n");

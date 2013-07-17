@@ -613,9 +613,6 @@ static Eina_Bool updator_cb(void *data)
 		if (so_need_to_destroy(item->inst) == NEED_TO_DESTROY) {
 			provider_send_deleted(item->inst->item->pkgname, item->inst->id);
 			lb_destroy(item->inst->item->pkgname, item->inst->id);
-
-			ecore_timer_del(item->timer);
-			item->timer = NULL;
 			return ECORE_CALLBACK_CANCEL;
 		}
 
