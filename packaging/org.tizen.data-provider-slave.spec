@@ -2,7 +2,7 @@
 
 Name: org.tizen.data-provider-slave
 Summary: Plugin type livebox service provider.
-Version: 0.12.4
+Version: 0.12.7
 Release: 1
 Group: HomeTF/Livebox
 License: Flora License
@@ -44,6 +44,12 @@ Supporting the In-house livebox only.
 %setup -q
 
 %build
+%if 0%{?tizen_build_binary_release_type_eng}
+export CFLAGS="${CFLAGS} -DTIZEN_ENGINEER_MODE"
+export CXXFLAGS="${CXXFLAGS} -DTIZEN_ENGINEER_MODE"
+export FFLAGS="${FFLAGS} -DTIZEN_ENGINEER_MODE"
+%endif
+
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix}
 #-fpie  LDFLAGS="${LDFLAGS} -pie -O3"
 CFLAGS="${CFLAGS} -Wall -Winline -Werror -fno-builtin-malloc" make %{?jobs:-j%jobs}

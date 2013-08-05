@@ -236,6 +236,15 @@ static inline int convert_shortcut_type_to_lb_type(int shortcut_type, char **str
 	case LIVEBOX_TYPE_4x6:
 		*str = "4x6";
 		return LB_SIZE_TYPE_4x6;
+	case LIVEBOX_TYPE_EASY_1x1:
+		*str = "easy,1x1";
+		return LB_SIZE_TYPE_EASY_1x1;
+	case LIVEBOX_TYPE_EASY_3x1:
+		*str = "easy,3x1";
+		return LB_SIZE_TYPE_EASY_3x1;
+	case LIVEBOX_TYPE_EASY_3x3:
+		*str = "easy,3x3";
+		return LB_SIZE_TYPE_EASY_3x3;
 	default:
 		*str = "?x?";
 		return LB_SIZE_TYPE_UNKNOWN;
@@ -334,6 +343,12 @@ static struct packet *icon_create(pid_t pid, int handle, const struct packet *pa
 	destroy_virtual_canvas(e);
 
 out:
+	if (ret < 0) {
+		/* Desc file should be deleted if it fails to create an icon image */
+		if (unlink(desc_file) < 0)
+			ErrPrint("unlink(%s): %s\n", desc_file, strerror(errno));
+	}
+
 	return packet_create_reply(packet, "i", ret);
 }
 

@@ -40,6 +40,10 @@
 
 int errno;
 
+#define UPDATE_ITEM_DELETED	(-1)
+#define UPDATE_INVOKED		(-2)
+#define UPDATE_NOT_INVOKED	(0)
+
 struct item {
 	Ecore_Timer *timer;
 	struct instance *inst;
@@ -146,7 +150,10 @@ static Eina_Bool pd_open_pended_cmd_consumer_cb(void *data)
 	 * \note
 	 * To prevent from checking the is_updated function
 	 */
-	(void)updator_cb(item);
+	if (updator_cb(item) == ECORE_CALLBACK_CANCEL) {
+		/* Item is destroyed */
+	}
+
 	if (s_info.pd_open_pending_list)
 		return ECORE_CALLBACK_RENEW;
 
@@ -171,7 +178,10 @@ static Eina_Bool pended_cmd_consumer_cb(void *data)
 	 * \note
 	 * To prevent from checking the is_updated function
 	 */
-	(void)updator_cb(item);
+	if (updator_cb(item) == ECORE_CALLBACK_CANCEL) {
+		/* item is destroyed */
+	}
+
 	if (s_info.pending_list)
 		return ECORE_CALLBACK_RENEW;
 
@@ -321,7 +331,13 @@ static int append_pending_list(struct item *item)
 	return 0;
 }
 
-static inline void timer_thaw(struct item *item)
+/*!
+ * \brief
+ *   This function can call the update callback
+ * return 0 if there is no changes
+ * return -1 the item is deleted
+ */
+static inline int timer_thaw(struct item *item)
 {
 	double pending;
 	double period;
@@ -329,7 +345,7 @@ static inline void timer_thaw(struct item *item)
 	double sleep_time;
 
 	if (!item->timer)
-		return;
+		return 0;
 
 	ecore_timer_thaw(item->timer);
 	period = ecore_timer_interval_get(item->timer);
@@ -338,13 +354,21 @@ static inline void timer_thaw(struct item *item)
 	ecore_timer_delay(item->timer, delay);
 
 	if (item->sleep_at == 0.0f)
-		return;
+		return 0;
 
 	sleep_time = util_timestamp() - item->sleep_at;
-	if (sleep_time > pending)
-		(void)updator_cb(item);
-
 	item->sleep_at = 0.0f;
+
+	if (sleep_time > pending) {
+		if (updator_cb(item) == ECORE_CALLBACK_CANCEL) {
+			/* item is destroyed */
+			return UPDATE_ITEM_DELETED;
+		} else {
+			return UPDATE_INVOKED;
+		}
+	}
+
+	return UPDATE_NOT_INVOKED;
 }
 
 static inline void timer_freeze(struct item *item)
@@ -583,6 +607,11 @@ static Eina_Bool update_timeout_cb(void *data)
 	return ECORE_CALLBACK_CANCEL;
 }
 
+/*!
+ * \note
+ * This must has to return ECORE_CALLBACK_CANCEL, only if the item is deleted.
+ * So every caller, should manage the deleted item correctly.
+ */
 static Eina_Bool updator_cb(void *data)
 {
 	struct item *item;
@@ -613,6 +642,10 @@ static Eina_Bool updator_cb(void *data)
 		if (so_need_to_destroy(item->inst) == NEED_TO_DESTROY) {
 			provider_send_deleted(item->inst->item->pkgname, item->inst->id);
 			lb_destroy(item->inst->item->pkgname, item->inst->id);
+			/*!
+			 * \CRITICAL
+			 * Every caller of this, must not access the item from now.
+			 */
 			return ECORE_CALLBACK_CANCEL;
 		}
 
@@ -704,6 +737,7 @@ static inline int add_desc_update_monitor(const char *id, struct item *item)
 {
 	char *filename;
 	int len;
+	int ret;
 
 	len = strlen(util_uri_to_path(id)) + strlen(".desc") + 1;
 	filename = malloc(len);
@@ -713,20 +747,14 @@ static inline int add_desc_update_monitor(const char *id, struct item *item)
 	}
 
 	snprintf(filename, len, "%s.desc", util_uri_to_path(id));
-	return update_monitor_add_update_cb(filename, desc_updated_cb, item);
+	ret = update_monitor_add_update_cb(filename, desc_updated_cb, item);
+	free(filename);
+	return ret;
 }
 
 static inline int add_file_update_monitor(const char *id, struct item *item)
 {
-	char *filename;
-
-	filename = strdup(util_uri_to_path(id));
-	if (!filename) {
-		ErrPrint("Heap: %s (%s)\n", strerror(errno), id);
-		return LB_STATUS_ERROR_MEMORY;
-	}
-
-	return update_monitor_add_update_cb(filename, file_updated_cb, item);
+	return update_monitor_add_update_cb(util_uri_to_path(id), file_updated_cb, item);
 }
 
 static inline int update_monitor_add(const char *id, struct item *item)
@@ -1417,8 +1445,6 @@ HAPI int lb_delete_all_deleteme(void)
 		if (!item->deleteme)
 			continue;
 
-		s_info.item_list = eina_list_remove(s_info.item_list, item);
-
 		update_monitor_del(item->inst->id, item);
 		(void)so_destroy(item->inst);
 		free(item);
@@ -1473,13 +1499,14 @@ HAPI void lb_pause_all(void)
 HAPI void lb_resume_all(void)
 {
 	Eina_List *l;
+	Eina_List *n;
 	struct item *item;
 
 	s_info.paused = 0;
 
 	pending_timer_thaw();
 
-	EINA_LIST_FOREACH(s_info.item_list, l, item) {
+	EINA_LIST_FOREACH_SAFE(s_info.item_list, l, n, item) {
 		if (item->deleteme) {
 			DbgPrint("Instance %s skip timer resume (deleteme)\n", item->inst->item->pkgname);
 			continue;
@@ -1488,13 +1515,22 @@ HAPI void lb_resume_all(void)
 		if (item->is_paused)
 			continue;
 
-		timer_thaw(item);
-
 		lb_sys_event(item->inst, item, LB_SYS_EVENT_RESUMED);
 
 		if (item->updated_in_pause) {
 			(void)append_pending_list(item);
 			item->updated_in_pause = 0;
+		}
+
+		/*!
+		 * \note
+		 * After send the resume callback, call this function.
+		 * Because the timer_thaw can call the update function.
+		 * Before resumed event is notified to the livebox,
+		 * Do not call update function
+		 */
+		if (timer_thaw(item) == UPDATE_ITEM_DELETED) {
+			/* item is deleted */
 		}
 	}
 }
@@ -1541,6 +1577,7 @@ HAPI int lb_resume(const char *pkgname, const char *id)
 	struct instance *inst;
 	Eina_List *l;
 	struct item *item;
+	int ret;
 
 	inst = so_find_instance(pkgname, id);
 	if (!inst)
@@ -1566,9 +1603,22 @@ HAPI int lb_resume(const char *pkgname, const char *id)
 	if (s_info.paused)
 		return LB_STATUS_SUCCESS;
 
-	timer_thaw(item);
-
 	lb_sys_event(inst, item, LB_SYS_EVENT_RESUMED);
+
+	ret = timer_thaw(item);
+	if (ret == UPDATE_ITEM_DELETED) {
+		/*!
+		 * \note
+		 * ITEM is deleted
+		 */
+		return LB_STATUS_SUCCESS;
+	} else if (ret == UPDATE_INVOKED) {
+		/*!
+		 * \note
+		 * if the update is successfully done, the updated_in_pause will be reset'd.
+		 * or append it to the pending list
+		 */
+	}
 
 	if (item->updated_in_pause) {
 		(void)append_pending_list(item);

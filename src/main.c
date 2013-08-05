@@ -224,6 +224,7 @@ static bool app_create(void *data)
 	 */
 	ret = fault_init();
 	DbgPrint("Crash recover is initiated: %d\n", ret);
+
 	ret = update_monitor_init();
 	DbgPrint("Content update monitor is initiated: %d\n", ret);
 
