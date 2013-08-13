@@ -52,8 +52,9 @@ static inline void rotate_log(void)
 	char *filename;
 	int namelen;
 
-	if (s_info.nr_of_lines < MAX_LOG_LINE)
+	if (s_info.nr_of_lines < MAX_LOG_LINE) {
 		return;
+	}
 
 	s_info.file_id = (s_info.file_id + 1) % MAX_LOG_FILE;
 
@@ -62,12 +63,16 @@ static inline void rotate_log(void)
 	if (filename) {
 		snprintf(filename, namelen, "%s/%d_%s.%d", SLAVE_LOG_PATH, s_info.file_id, s_info.filename, getpid());
 
-		if (s_info.fp)
-			fclose(s_info.fp);
+		if (s_info.fp) {
+			if (fclose(s_info.fp) != 0) {
+				ErrPrint("fclose: %s\n", strerror(errno));
+			}
+		}
 
 		s_info.fp = fopen(filename, "w+");
-		if (!s_info.fp)
+		if (!s_info.fp) {
 			ErrPrint("Failed to open a file: %s\n", filename);
+		}
 
 		DbgFree(filename);
 	}
@@ -82,8 +87,9 @@ HAPI int critical_log(const char *func, int line, const char *fmt, ...)
 	va_list ap;
 	int ret;
 
-	if (!s_info.fp)
+	if (!s_info.fp) {
 		return LB_STATUS_ERROR_IO;
+	}
 
 	fprintf(s_info.fp, "%lf [%s:%d] ", util_timestamp(), util_basename((char *)func), line);
 
@@ -91,7 +97,9 @@ HAPI int critical_log(const char *func, int line, const char *fmt, ...)
 	ret = vfprintf(s_info.fp, fmt, ap);
 	va_end(ap);
 
-	fflush(s_info.fp);
+	if (fflush(s_info.fp) != 0) {
+		ErrPrint("fflush: %s\n", strerror(errno));
+	}
 
 	s_info.nr_of_lines++;
 	rotate_log();
@@ -105,8 +113,9 @@ HAPI int critical_log_init(const char *name)
 	int namelen;
 	char *filename;
 
-	if (s_info.fp)
+	if (s_info.fp) {
 		return LB_STATUS_SUCCESS;
+	}
 
 	s_info.filename = strdup(name);
 	if (!s_info.filename) {
@@ -149,7 +158,9 @@ HAPI int critical_log_fini(void)
 	}
 
 	if (s_info.fp) {
-		fclose(s_info.fp);
+		if (fclose(s_info.fp) != 0) {
+			ErrPrint("fclose: %s\n", strerror(errno));
+		}
 		s_info.fp = NULL;
 	}
 

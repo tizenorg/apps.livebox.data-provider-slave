@@ -169,8 +169,9 @@ static void font_size_cb(system_settings_key_e key, void *user_data)
 {
 	int size;
 
-	if (system_settings_get_value_int(SYSTEM_SETTINGS_KEY_FONT_SIZE, &size) != SYSTEM_SETTINGS_ERROR_NONE)
+	if (system_settings_get_value_int(SYSTEM_SETTINGS_KEY_FONT_SIZE, &size) != SYSTEM_SETTINGS_ERROR_NONE) {
 		return;
+	}
 
 	size = convert_font_size(size);
 
@@ -191,8 +192,9 @@ static void mmc_changed_cb(keynode_t *node, void *user_data)
 
 static void time_changed_cb(keynode_t *node, void *user_data)
 {
-	if (vconf_keynode_get_int(node) != VCONFKEY_SYSMAN_STIME_CHANGED)
+	if (vconf_keynode_get_int(node) != VCONFKEY_SYSMAN_STIME_CHANGED) {
 		return;
+	}
 
 	DbgPrint("Time is changed\n");
 	lb_system_event_all(LB_SYS_EVENT_TIME_CHANGED);
@@ -207,10 +209,15 @@ static bool app_create(void *data)
 	ret = conf_loader();
 	DbgPrint("Configureation manager is initiated: %d\n", ret);
 
-	if (COM_CORE_THREAD)
-		setenv("PROVIDER_COM_CORE_THREAD", "true", 0);
-	else
-		setenv("PROVIDER_COM_CORE_THREAD", "false", 0);
+	if (COM_CORE_THREAD) {
+		if (setenv("PROVIDER_COM_CORE_THREAD", "true", 0) < 0) {
+			ErrPrint("setenv: %s\n", strerror(errno));
+		}
+	} else {
+		if (setenv("PROVIDER_COM_CORE_THREAD", "false", 0) < 0){
+			ErrPrint("setenv: %s\n", strerror(errno));
+		}
+	}
 
 	ret = livebox_service_init();
 	DbgPrint("Livebox service init: %d\n", ret);
@@ -396,12 +403,14 @@ int main(int argc, char *argv[])
 	mcheck(mcheck_cb);
 #endif
 	option = getenv("PROVIDER_DISABLE_CALL_OPTION");
-	if (option && !strcasecmp(option, "true"))
+	if (option && !strcasecmp(option, "true")) {
 		fault_disable_call_option();
+	}
 
 	option = getenv("PROVIDER_HEAP_MONITOR_START");
-	if (option && !strcasecmp(option, "true"))
+	if (option && !strcasecmp(option, "true")) {
 		s_info.heap_monitor = 1;
+	}
 
 	setenv("BUFMGR_LOCK_TYPE", "once", 0);
 	setenv("BUFMGR_MAP_CACHE", "true", 0);

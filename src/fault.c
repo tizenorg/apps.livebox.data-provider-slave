@@ -92,9 +92,12 @@ static void signal_handler(int signum, siginfo_t *info, void *unused)
 		snprintf(log_fname, sizeof(log_fname), "%s/slave.%d", SLAVE_LOG_PATH, getpid());
 		fd = open(log_fname, O_WRONLY|O_CREAT|O_SYNC, 0644);
 		if (fd >= 0) {
-			if (write(fd, so_fname, strlen(so_fname)) != strlen(so_fname))
+			if (write(fd, so_fname, strlen(so_fname)) != strlen(so_fname)) {
 				ErrPrint("Failed to recording the fault SO filename (%s)\n", so_fname);
-			close(fd);
+			}
+			if (close(fd) < 0) {
+				ErrPrint("close: %s\n", strerror(errno));
+			}
 		}
 	}
 
@@ -118,38 +121,49 @@ HAPI int fault_init(void)
 	act.sa_sigaction = signal_handler;
 	act.sa_flags = SA_SIGINFO;
 
-	if (sigemptyset(&act.sa_mask) != 0)
+	if (sigemptyset(&act.sa_mask) != 0) {
 		ErrPrint("Failed to init signal: %s\n", strerror(errno));
+	}
 
-	if (sigaddset(&act.sa_mask, SIGUSR1) != 0)
+	if (sigaddset(&act.sa_mask, SIGUSR1) != 0) {
 		ErrPrint("Failed to add set: %s\n", strerror(errno));
-	if (sigaddset(&act.sa_mask, SIGALRM) != 0)
+	}
+	if (sigaddset(&act.sa_mask, SIGALRM) != 0) {
 		ErrPrint("Failed to add set: %s\n", strerror(errno));
+	}
 
 	ecore_abort = getenv("ECORE_ERROR_ABORT");
 	if (!ecore_abort || ecore_abort[0] != '1') {
-		if (sigaddset(&act.sa_mask, SIGSEGV) != 0)
+		if (sigaddset(&act.sa_mask, SIGSEGV) != 0) {
 			ErrPrint("Failed to add set: %s\n", strerror(errno));
-		if (sigaddset(&act.sa_mask, SIGABRT) != 0)
+		}
+		if (sigaddset(&act.sa_mask, SIGABRT) != 0) {
 			ErrPrint("Failed to add set: %s\n", strerror(errno));
-		if (sigaddset(&act.sa_mask, SIGILL) != 0)
+		}
+		if (sigaddset(&act.sa_mask, SIGILL) != 0) {
 			ErrPrint("Failed to add set: %s\n", strerror(errno));
+		}
 
-		if (sigaction(SIGSEGV, &act, NULL) < 0)
+		if (sigaction(SIGSEGV, &act, NULL) < 0) {
 			ErrPrint("Failed to install the SEGV handler\n");
+		}
 
-		if (sigaction(SIGABRT, &act, NULL) < 0)
+		if (sigaction(SIGABRT, &act, NULL) < 0) {
 			ErrPrint("Faield to install the ABRT handler\n");
+		}
 
-		if (sigaction(SIGILL, &act, NULL) < 0)
+		if (sigaction(SIGILL, &act, NULL) < 0) {
 			ErrPrint("Faield to install the ILL handler\n");
+		}
 	}
 
-	if (sigaction(SIGUSR1, &act, NULL) < 0)
+	if (sigaction(SIGUSR1, &act, NULL) < 0) {
 		ErrPrint("Failed to install the USR1 handler\n");
+	}
 
-	if (sigaction(SIGALRM, &act, NULL) < 0)
+	if (sigaction(SIGALRM, &act, NULL) < 0) {
 		ErrPrint("Failed to install the ALRM handler\n");
+	}
 
 	return 0;
 }
@@ -165,8 +179,9 @@ HAPI int fault_fini(void)
 
 HAPI int fault_mark_call(const char *pkgname, const char *filename, const char *funcname, int noalarm, int life_time)
 {
-	if (!s_info.disable_checker)
+	if (!s_info.disable_checker) {
 		provider_send_call(pkgname, filename, funcname);
+	}
 	/*!
 	 * \NOTE
 	 *   To use this "alarm", the livebox have to do not use the 'sleep' series functions.
@@ -199,8 +214,9 @@ HAPI int fault_unmark_call(const char *pkgname, const char *filename, const char
 		s_info.marked = 0;
 	}
 
-	if (!s_info.disable_checker)
+	if (!s_info.disable_checker) {
 		provider_send_ret(pkgname, filename, funcname);
+	}
 	return 0;
 }
 

@@ -86,8 +86,9 @@ HAPI const char *util_basename(const char *name)
 	int length;
 
 	length = name ? strlen(name) : 0;
-	if (!length)
+	if (!length) {
 		return ".";
+	}
 
 	while (--length > 0 && name[length] != '/');
 
@@ -111,15 +112,17 @@ HAPI char *util_get_current_module(char **symbol)
 	register int i;
 
 	if (!pthread_getattr_np(pthread_self(), &attr)) {
-		if (!pthread_attr_getstack(&attr, (void *)&stack_boundary, &stack_size))
+		if (!pthread_attr_getstack(&attr, (void *)&stack_boundary, &stack_size)) {
 			stack_boundary += stack_size;
+		}
 		pthread_attr_destroy(&attr);
 	}
 
 	ret = NULL;
 	for (i = 0, stack = (int *)&stack; (unsigned int)stack < stack_boundary ; stack++, i++) {
-		if (!dladdr((void *)*stack, &dinfo))
+		if (!dladdr((void *)*stack, &dinfo)) {
 			continue;
+		}
 
 		ptr = util_basename(dinfo.dli_fname);
 		if (strncmp(ptr, "liblive-", strlen("liblive-"))) {
@@ -135,10 +138,11 @@ HAPI char *util_get_current_module(char **symbol)
 		ret = strdup(ptr);
 
 		if (symbol) {
-			if (dinfo.dli_sname)
+			if (dinfo.dli_sname) {
 				*symbol = strdup(dinfo.dli_sname);
-			else
+			} else {
 				*symbol = NULL;
+			}
 		}
 		break;
 	}
@@ -151,8 +155,9 @@ HAPI const char *util_uri_to_path(const char *uri)
 	int len;
 
 	len = strlen(SCHEMA_FILE);
-	if (strncasecmp(uri, SCHEMA_FILE, len))
+	if (strncasecmp(uri, SCHEMA_FILE, len)) {
 		return NULL;
+	}
 
 	return uri + len;
 }
@@ -170,7 +175,7 @@ HAPI double util_time_delay_for_compensation(double period)
 		return 0.0f;
 	}
 
-	if (gettimeofday(&tv, NULL) < 0){
+	if (gettimeofday(&tv, NULL) < 0) {
 		ErrPrint("gettimeofday: %s\n", strerror(errno));
 		return period;
 	}
@@ -194,8 +199,9 @@ HAPI void *util_timer_add(double interval, Eina_Bool (*cb)(void *data), void *da
 	double delay;
 
 	timer = ecore_timer_add(interval, cb, data);
-	if (!timer)
+	if (!timer) {
 		return NULL;
+	}
 
 	delay = util_time_delay_for_compensation(interval) - interval;
 	ecore_timer_delay(timer, delay);

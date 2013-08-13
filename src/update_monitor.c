@@ -102,7 +102,9 @@ static Eina_Bool monitor_cb(void *data, Ecore_Fd_Handler *handler)
 
 		if (util_check_ext(evt->name, "gnp.") == 0
 			&& util_check_ext(evt->name, "csed.") == 0)
+		{
 			continue;
+		}
 
 		len = strlen(evt->name) + strlen(IMAGE_PATH) + 1;
 		filename = malloc(len);
@@ -155,7 +157,9 @@ HAPI int update_monitor_init(void)
 
 	if (s_info.iwd < 0) {
 		ErrPrint("Error: %s\n", strerror(errno));
-		close(s_info.ifd);
+		if (close(s_info.ifd) < 0) {
+			ErrPrint("close: %s\n", strerror(errno));
+		}
 		s_info.ifd = LB_STATUS_ERROR_INVALID;
 		return LB_STATUS_ERROR_IO;
 	}
@@ -164,11 +168,14 @@ HAPI int update_monitor_init(void)
 				ECORE_FD_READ, monitor_cb, NULL, NULL, NULL);
 	if (!s_info.handler) {
 		ErrPrint("Failed to add a FD handler\n");
-		if (inotify_rm_watch(s_info.ifd, s_info.iwd) < 0)
+		if (inotify_rm_watch(s_info.ifd, s_info.iwd) < 0) {
 			ErrPrint("inotify_rm_watch: %s", strerror(errno));
+		}
 		s_info.iwd = -EINVAL;
 
-		close(s_info.ifd);
+		if (close(s_info.ifd) < 0) {
+			ErrPrint("close: %s\n", strerror(errno));
+		}
 		s_info.ifd = LB_STATUS_ERROR_INVALID;
 		return LB_STATUS_ERROR_FAULT;
 	}
@@ -187,12 +194,15 @@ HAPI int update_monitor_fini(void)
 	}
 
 	if (s_info.ifd >= 0) {
-		if (inotify_rm_watch(s_info.ifd, s_info.iwd) < 0)
+		if (inotify_rm_watch(s_info.ifd, s_info.iwd) < 0) {
 			ErrPrint("inotify_rm_watch:%s", strerror(errno));
+		}
 
 		s_info.iwd = LB_STATUS_ERROR_INVALID;
 
-		close(s_info.ifd);
+		if (close(s_info.ifd) < 0) {
+			ErrPrint("close: %s\n", strerror(errno));
+		}
 		s_info.ifd = LB_STATUS_ERROR_INVALID;
 	}
 

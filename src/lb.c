@@ -102,8 +102,9 @@ static void pending_timer_freeze(void)
 static void pending_timer_thaw(void)
 {
 	DbgPrint("Freezed Count: %d\n", s_info.pending_timer_freezed);
-	if (!s_info.pending_timer_freezed)
+	if (!s_info.pending_timer_freezed) {
 		return;
+	}
 
 	s_info.pending_timer_freezed--;
 	if (s_info.pending_timer && !s_info.pending_timer_freezed) {
@@ -125,8 +126,9 @@ static inline int pd_is_opened(const char *pkgname)
 
 	i = 0;
 	EINA_LIST_FOREACH(s_info.pd_list, l, tmp) {
-		if (pkgname && !strcmp(pkgname, tmp))
+		if (pkgname && !strcmp(pkgname, tmp)) {
 			return 1;
+		}
 
 		i++;
 	}
@@ -139,11 +141,13 @@ static Eina_Bool pd_open_pended_cmd_consumer_cb(void *data)
 	struct item *item;
 
 	item = eina_list_nth(s_info.pd_open_pending_list, 0);
-	if (!item)
+	if (!item) {
 		goto cleanout;
+	}
 
-	if (s_info.update)
+	if (s_info.update) {
 		return ECORE_CALLBACK_RENEW;
+	}
 
 	s_info.pd_open_pending_list = eina_list_remove(s_info.pd_open_pending_list, item);
 	/*!
@@ -154,8 +158,9 @@ static Eina_Bool pd_open_pended_cmd_consumer_cb(void *data)
 		/* Item is destroyed */
 	}
 
-	if (s_info.pd_open_pending_list)
+	if (s_info.pd_open_pending_list) {
 		return ECORE_CALLBACK_RENEW;
+	}
 
 cleanout:
 	s_info.pd_open_pending_timer = NULL;
@@ -167,11 +172,13 @@ static Eina_Bool pended_cmd_consumer_cb(void *data)
 	struct item *item;
 
 	item = eina_list_nth(s_info.pending_list, 0);
-	if (!item)
+	if (!item) {
 		goto cleanout;
+	}
 
-	if (s_info.update || pd_is_opened(item->inst->item->pkgname) < 0)
+	if (s_info.update || pd_is_opened(item->inst->item->pkgname) < 0) {
 		return ECORE_CALLBACK_RENEW;
+	}
 
 	s_info.pending_list = eina_list_remove(s_info.pending_list, item);
 	/*!
@@ -182,8 +189,9 @@ static Eina_Bool pended_cmd_consumer_cb(void *data)
 		/* item is destroyed */
 	}
 
-	if (s_info.pending_list)
+	if (s_info.pending_list) {
 		return ECORE_CALLBACK_RENEW;
+	}
 
 cleanout:
 	s_info.pending_timer = NULL;
@@ -193,8 +201,9 @@ cleanout:
 
 static inline __attribute__((always_inline)) int activate_pending_consumer(void)
 {
-	if (s_info.pending_timer)
+	if (s_info.pending_timer) {
 		return 0;
+	}
 
 	s_info.pending_timer = ecore_timer_add(0.000001f, pended_cmd_consumer_cb, NULL);
 	if (!s_info.pending_timer) {
@@ -206,16 +215,18 @@ static inline __attribute__((always_inline)) int activate_pending_consumer(void)
 	 * Do not increase the freezed counter.
 	 * Just freeze the timer.
 	 */
-	if (s_info.pending_timer_freezed)
+	if (s_info.pending_timer_freezed) {
 		ecore_timer_freeze(s_info.pending_timer);
+	}
 
 	return 0;
 }
 
 static inline void deactivate_pending_consumer(void)
 {
-	if (!s_info.pending_timer)
+	if (!s_info.pending_timer) {
 		return;
+	}
 
 	ecore_timer_del(s_info.pending_timer);
 	s_info.pending_timer = NULL;
@@ -224,8 +235,9 @@ static inline void deactivate_pending_consumer(void)
 
 static inline void deactivate_pd_open_pending_consumer(void)
 {
-	if (!s_info.pd_open_pending_timer)
+	if (!s_info.pd_open_pending_timer) {
 		return;
+	}
 
 	ecore_timer_del(s_info.pd_open_pending_timer);
 	s_info.pd_open_pending_timer = NULL;
@@ -233,8 +245,9 @@ static inline void deactivate_pd_open_pending_consumer(void)
 
 static inline int __attribute__((always_inline)) activate_pd_open_pending_consumer(void)
 {
-	if (s_info.pd_open_pending_timer)
+	if (s_info.pd_open_pending_timer) {
 		return 0;
+	}
 
 	s_info.pd_open_pending_timer = ecore_timer_add(0.000001f, pd_open_pended_cmd_consumer_cb, NULL);
 	if (!s_info.pd_open_pending_timer) {
@@ -253,19 +266,22 @@ static inline void migrate_to_pd_open_pending_list(const char *pkgname)
 	int cnt = 0;
 
 	EINA_LIST_FOREACH_SAFE(s_info.pending_list, l, n, item) {
-		if (strcmp(pkgname, item->inst->item->pkgname))
+		if (strcmp(pkgname, item->inst->item->pkgname)) {
 			continue;
+		}
 
 		s_info.pending_list = eina_list_remove(s_info.pending_list, item);
 		s_info.pd_open_pending_list = eina_list_append(s_info.pd_open_pending_list, item);
 		cnt++;
 	}
 
-	if (s_info.pd_open_pending_list)
+	if (s_info.pd_open_pending_list) {
 		activate_pd_open_pending_consumer();
+	}
 
-	if (!s_info.pending_list)
+	if (!s_info.pending_list) {
 		deactivate_pending_consumer();
+	}
 }
 
 static inline void migrate_to_pending_list(const char *pkgname)
@@ -276,19 +292,22 @@ static inline void migrate_to_pending_list(const char *pkgname)
 	int cnt = 0;
 
 	EINA_LIST_FOREACH_SAFE(s_info.pd_open_pending_list, l, n, item) {
-		if (strcmp(pkgname, item->inst->item->pkgname))
+		if (strcmp(pkgname, item->inst->item->pkgname)) {
 			continue;
+		}
 
 		s_info.pd_open_pending_list = eina_list_remove(s_info.pd_open_pending_list, item);
 		s_info.pending_list = eina_list_append(s_info.pending_list, item);
 		cnt++;
 	}
 
-	if (s_info.pending_list)
+	if (s_info.pending_list) {
 		activate_pending_consumer();
+	}
 
-	if (!s_info.pd_open_pending_list)
+	if (!s_info.pd_open_pending_list) {
 		deactivate_pd_open_pending_consumer();
+	}
 }
 
 static inline int is_pended_item(struct item *item)
@@ -323,8 +342,9 @@ static int append_pending_list(struct item *item)
 			return LB_STATUS_ERROR_EXIST;
 		}
 
-		if (activate_pending_consumer() < 0)
+		if (activate_pending_consumer() < 0) {
 			return LB_STATUS_ERROR_FAULT;
+		}
 
 		s_info.pending_list = eina_list_append(s_info.pending_list, item);
 	}
@@ -344,8 +364,9 @@ static inline int timer_thaw(struct item *item)
 	double delay;
 	double sleep_time;
 
-	if (!item->timer)
+	if (!item->timer) {
 		return 0;
+	}
 
 	ecore_timer_thaw(item->timer);
 	period = ecore_timer_interval_get(item->timer);
@@ -353,8 +374,9 @@ static inline int timer_thaw(struct item *item)
 	delay = util_time_delay_for_compensation(period) - pending;
 	ecore_timer_delay(item->timer, delay);
 
-	if (item->sleep_at == 0.0f)
+	if (item->sleep_at == 0.0f) {
 		return 0;
+	}
 
 	sleep_time = util_timestamp() - item->sleep_at;
 	item->sleep_at = 0.0f;
@@ -371,17 +393,19 @@ static inline int timer_thaw(struct item *item)
 	return UPDATE_NOT_INVOKED;
 }
 
-static inline void timer_freeze(struct item *item)
+static void timer_freeze(struct item *item)
 {
 	struct timeval tv;
 
-	if (!item->timer)
+	if (!item->timer) {
 		return;
+	}
 
 	ecore_timer_freeze(item->timer);
 
-	if (ecore_timer_interval_get(item->timer) <= 1.0f)
+	if (ecore_timer_interval_get(item->timer) <= 1.0f) {
 		return;
+	}
 
 	if (gettimeofday(&tv, NULL) < 0) {
 		ErrPrint("gettimeofday: %s\n", strerror(errno));
@@ -434,8 +458,9 @@ static inline Eina_List *find_item(struct instance *inst)
 	struct item *item;
 	
 	EINA_LIST_FOREACH(s_info.item_list, l, item) {
-		if (item->inst == inst)
+		if (item->inst == inst) {
 			return l;
+		}
 	}
 
 	return NULL;
@@ -458,16 +483,18 @@ static inline int output_handler(struct item *item)
 	}
 
 	if (item->monitor_cnt == 0) {
-		if (!invalid)
+		if (!invalid) {
 			fault_unmark_call(item->inst->item->pkgname, item->inst->id, "update,crashed", NO_ALARM);
+		}
 
 		if (item->monitor) {
 			ecore_timer_del(item->monitor);
 			item->monitor = NULL;
 		}
 
-		if (s_info.update == item)
+		if (s_info.update == item) {
 			s_info.update = NULL;
+		}
 
 		if (item->deleteme) {
 			provider_send_deleted(item->inst->item->pkgname, item->inst->id);
@@ -484,8 +511,9 @@ static int desc_updated_cb(const char *filename, void *data, int over)
 {
 	struct item *item;
 
-	if (over)
+	if (over) {
 		WarnPrint("Event Q overflow\n");
+	}
 
 	item = data;
 
@@ -508,8 +536,9 @@ static int file_updated_cb(const char *filename, void *data, int over)
 	char *title = NULL;
 	int ret;
 
-	if (over)
+	if (over) {
 		WarnPrint("Event Q overflow\n");
+	}
 
 	item = data;
 
@@ -538,8 +567,9 @@ static int file_updated_cb(const char *filename, void *data, int over)
 
 static void reset_lb_updated_flag(struct item *item)
 {
-	if (!item->is_lb_updated)
+	if (!item->is_lb_updated) {
 		return;
+	}
 
 	DbgPrint("[%s] Updated %d times, (content: %s), (title: %s)\n",
 			item->inst->id, item->is_lb_updated,
@@ -558,12 +588,14 @@ static inline int clear_from_pd_open_pending_list(struct item *item)
 	struct item *tmp;
 
 	EINA_LIST_FOREACH(s_info.pd_open_pending_list, l, tmp) {
-		if (tmp != item)
+		if (tmp != item) {
 			continue;
+		}
 
 		s_info.pd_open_pending_list = eina_list_remove_list(s_info.pd_open_pending_list, l);
-		if (!s_info.pd_open_pending_list)
+		if (!s_info.pd_open_pending_list) {
 			deactivate_pd_open_pending_consumer();
+		}
 		return LB_STATUS_SUCCESS;
 	}
 
@@ -576,12 +608,14 @@ static inline int clear_from_pending_list(struct item *item)
 	struct item *tmp;
 
 	EINA_LIST_FOREACH(s_info.pending_list, l, tmp) {
-		if (tmp != item)
+		if (tmp != item) {
 			continue;
+		}
 
 		s_info.pending_list = eina_list_remove_list(s_info.pending_list, l);
-		if (!s_info.pending_list)
+		if (!s_info.pending_list) {
 			deactivate_pending_consumer();
+		}
 		return LB_STATUS_SUCCESS;
 	}
 
@@ -596,8 +630,9 @@ static Eina_Bool update_timeout_cb(void *data)
 
 	ErrPrint("UPDATE TIMEOUT ========> %s - %s\n", item->inst->item->pkgname, item->inst->id);
 
-	if (s_info.update != item)
+	if (s_info.update != item) {
 		ErrPrint("Updating item is not matched\n");
+	}
 
 	fault_unmark_call(item->inst->item->pkgname, item->inst->id, "update,crashed", NO_ALARM);
 	fault_mark_call(item->inst->item->pkgname, item->inst->id, "update,timeout", NO_ALARM, DEFAULT_LIFE_TIMER);
@@ -619,7 +654,7 @@ static Eina_Bool updator_cb(void *data)
 
 	item = data;
 
-	if (item->monitor) {/*!< If this item is already in update process */
+	if (item->monitor) { /*!< If this item is already in update process */
 		return ECORE_CALLBACK_RENEW;
 	}
 
@@ -689,8 +724,9 @@ static Eina_Bool updator_cb(void *data)
 	 */
 	fault_mark_call(item->inst->item->pkgname, item->inst->id, "update,crashed", NO_ALARM, DEFAULT_LIFE_TIMER);
 
-	if (ret & NEED_TO_SCHEDULE)
+	if (ret & NEED_TO_SCHEDULE) {
 		(void)append_pending_list(item);
+	}
 
 	if (ret & OUTPUT_UPDATED) {
 		/*!
@@ -803,8 +839,9 @@ const char *livebox_find_pkgname(const char *filename)
 	struct item *item;
 
 	EINA_LIST_FOREACH(s_info.item_list, l, item) {
-		if (!strcmp(item->inst->id, filename))
+		if (!strcmp(item->inst->id, filename)) {
 			return item->inst->item->pkgname;
+		}
 	}
 
 	return NULL;
@@ -875,8 +912,9 @@ HAPI int lb_open_pd(const char *pkgname)
 	char *tmp;
 
 	EINA_LIST_FOREACH(s_info.pd_list, l, tmp) {
-		if (!strcmp(pkgname, tmp))
+		if (!strcmp(pkgname, tmp)) {
 			return 0;
+		}
 	}
 
 	tmp = strdup(pkgname);
@@ -885,8 +923,9 @@ HAPI int lb_open_pd(const char *pkgname)
 		return LB_STATUS_ERROR_MEMORY;
 	}
 
-	if (!s_info.pd_list)
+	if (!s_info.pd_list) {
 		pending_timer_freeze();
+	}
 
 	s_info.pd_list = eina_list_append(s_info.pd_list, tmp);
 
@@ -905,14 +944,16 @@ HAPI int lb_close_pd(const char *pkgname)
 	char *tmp;
 
 	EINA_LIST_FOREACH_SAFE(s_info.pd_list, l, n, tmp) {
-		if (strcmp(tmp, pkgname))
+		if (strcmp(tmp, pkgname)) {
 			continue;
+		}
 
 		s_info.pd_list = eina_list_remove(s_info.pd_list, tmp);
 		free(tmp);
 
-		if (!s_info.pd_list)
+		if (!s_info.pd_list) {
 			pending_timer_thaw();
+		}
 
 		/*!
 		 * Move all items in pd_open_pending_list
@@ -945,8 +986,9 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 
 	if (!skip_need_to_create) {
 		ret = so_create_needed(pkgname, cluster, category, abi);
-		if (ret != NEED_TO_CREATE)
+		if (ret != NEED_TO_CREATE) {
 			return LB_STATUS_ERROR_PERMISSION;
+		}
 
 		need_to_create = 1;
 	}
@@ -986,8 +1028,9 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 			return LB_STATUS_ERROR_FAULT;
 		}
 
-		if (s_info.paused)
+		if (s_info.paused) {
 			timer_freeze(item);
+		}
 	} else {
 		DbgPrint("Local update timer is disabled: %lf (%d)\n", period, s_info.secured);
 		item->timer = NULL;
@@ -1016,8 +1059,9 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 				char *tmp;
 
 				tmp = strdup(*out_content);
-				if (!tmp)
+				if (!tmp) {
 					ErrPrint("Memory: %s\n", strerror(errno));
+				}
 
 				*out_content = tmp;
 			}
@@ -1026,8 +1070,9 @@ HAPI int lb_create(const char *pkgname, const char *id, const char *content_info
 				char *tmp;
 
 				tmp = strdup(*out_title);
-				if (!tmp)
+				if (!tmp) {
 					ErrPrint("Memory: %s\n", strerror(errno));
+				}
 
 				*out_title = tmp;
 			}
@@ -1061,8 +1106,9 @@ HAPI int lb_destroy(const char *pkgname, const char *id)
 	item = eina_list_data_get(l);
 	s_info.item_list = eina_list_remove_list(s_info.item_list, l);
 
-	if (s_info.update == item)
+	if (s_info.update == item) {
 		s_info.update = NULL;
+	}
 
 	if (item->timer) {
 		clear_from_pd_open_pending_list(item);
@@ -1070,10 +1116,11 @@ HAPI int lb_destroy(const char *pkgname, const char *id)
 		ecore_timer_del(item->timer);
 		item->timer = NULL;
 
-		if (item->monitor)
+		if (item->monitor) {
 			item->deleteme = 1;
-		else
+		} else {
 			update_monitor_del(id, item);
+		}
 	}
 
 	if (!item->monitor) {
@@ -1106,16 +1153,18 @@ HAPI int lb_resize(const char *pkgname, const char *id, int w, int h)
 	item = eina_list_data_get(l);
 
 	ret = so_resize(inst, w, h);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	if (ret & NEED_TO_SCHEDULE) {
 		DbgPrint("%s Returns NEED_TO_SCHEDULE\n", pkgname);
 		(void)append_pending_list(item);
 	}
 
-	if (ret & OUTPUT_UPDATED)
+	if (ret & OUTPUT_UPDATED) {
 		update_monitor_cnt(item);
+	}
 
 	return LB_STATUS_SUCCESS;
 }
@@ -1170,8 +1219,9 @@ HAPI int lb_set_period(const char *pkgname, const char *id, double period)
 				return LB_STATUS_ERROR_FAULT;
 			}
 
-			if (s_info.paused)
+			if (s_info.paused) {
 				timer_freeze(item);
+			}
 		}
 	}
 
@@ -1200,16 +1250,18 @@ HAPI int lb_clicked(const char *pkgname, const char *id, const char *event, doub
 	item = eina_list_data_get(l);
 
 	ret = so_clicked(inst, event, timestamp, x, y);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	if (ret & NEED_TO_SCHEDULE) {
 		DbgPrint("%s Returns NEED_TO_SCHEDULE\n", pkgname);
 		(void)append_pending_list(item);
 	}
 
-	if (ret & OUTPUT_UPDATED)
+	if (ret & OUTPUT_UPDATED) {
 		update_monitor_cnt(item);
+	}
 
 	return LB_STATUS_SUCCESS;
 }
@@ -1240,8 +1292,9 @@ HAPI int lb_script_event(const char *pkgname, const char *id, const char *emissi
 			if (!strcmp(emission, "lb,show")) {
 				item->is_lb_show = 1;
 
-				if (item->is_lb_updated && !is_pended_item(item))
+				if (item->is_lb_updated && !is_pended_item(item)) {
 					reset_lb_updated_flag(item);
+				}
 
 				source = util_uri_to_path(source);
 			} else if (!strcmp(emission, "lb,hide")) {
@@ -1262,16 +1315,18 @@ HAPI int lb_script_event(const char *pkgname, const char *id, const char *emissi
 	}
 
 	ret = so_script_event(inst, emission, source, event_info);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	if (ret & NEED_TO_SCHEDULE) {
 		DbgPrint("%s Returns NEED_TO_SCHEDULE\n", pkgname);
 		(void)append_pending_list(item);
 	}
 
-	if (ret & OUTPUT_UPDATED)
+	if (ret & OUTPUT_UPDATED) {
 		update_monitor_cnt(item);
+	}
 
 	return LB_STATUS_SUCCESS;
 }
@@ -1329,33 +1384,38 @@ HAPI int lb_change_group(const char *pkgname, const char *id, const char *cluste
 	item = eina_list_data_get(l);
 
 	ret = so_change_group(inst, cluster, category);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	if (ret & NEED_TO_SCHEDULE) {
 		DbgPrint("%s Returns NEED_TO_SCHEDULE\n", pkgname);
 		(void)append_pending_list(item);
 	}
 
-	if (ret & OUTPUT_UPDATED)
+	if (ret & OUTPUT_UPDATED) {
 		update_monitor_cnt(item);
+	}
 
 	return LB_STATUS_SUCCESS;
 }
 
-static inline int lb_sys_event(struct instance *inst, struct item *item, int event)
+static int lb_sys_event(struct instance *inst, struct item *item, int event)
 {
 	int ret;
 
 	ret = so_sys_event(inst, event);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
-	if (ret & NEED_TO_SCHEDULE)
+	if (ret & NEED_TO_SCHEDULE) {
 		(void)append_pending_list(item);
+	}
 
-	if (ret & OUTPUT_UPDATED)
+	if (ret & OUTPUT_UPDATED) {
 		update_monitor_cnt(item);
+	}
 
 	return LB_STATUS_SUCCESS;
 }
@@ -1413,14 +1473,17 @@ HAPI int lb_update_all(const char *pkgname, const char *cluster, const char *cat
 
 	DbgPrint("Update content for %s\n", pkgname ? pkgname : "(all)");
 	EINA_LIST_FOREACH_SAFE(s_info.item_list, l, n, item) {
-		if (item->deleteme)
+		if (item->deleteme) {
 			continue;
+		}
 
-		if (cluster && strcasecmp(item->inst->cluster, cluster))
+		if (cluster && strcasecmp(item->inst->cluster, cluster)) {
 			continue;
+		}
 
-		if (category && strcasecmp(item->inst->category, category))
+		if (category && strcasecmp(item->inst->category, category)) {
 			continue;
+		}
 
 		if (pkgname && strlen(pkgname)) {
 			if (!strcmp(item->inst->item->pkgname, pkgname)) {
@@ -1442,8 +1505,9 @@ HAPI int lb_delete_all_deleteme(void)
 	int cnt = 0;
 
 	EINA_LIST_FOREACH_SAFE(s_info.item_list, l, n, item) {
-		if (!item->deleteme)
+		if (!item->deleteme) {
 			continue;
+		}
 
 		update_monitor_del(item->inst->id, item);
 		(void)so_destroy(item->inst);
@@ -1462,8 +1526,9 @@ HAPI int lb_system_event_all(int event)
 	struct item *item;
 
 	EINA_LIST_FOREACH_SAFE(s_info.item_list, l, n, item) {
-		if (item->deleteme)
+		if (item->deleteme) {
 			continue;
+		}
 
 		DbgPrint("System event for %s (%d)\n", item->inst->id, event);
 		lb_sys_event(item->inst, item, event);
@@ -1487,8 +1552,9 @@ HAPI void lb_pause_all(void)
 			continue;
 		}
 
-		if (item->is_paused)
+		if (item->is_paused) {
 			continue;
+		}
 
 		timer_freeze(item);
 
@@ -1512,8 +1578,9 @@ HAPI void lb_resume_all(void)
 			continue;
 		}
 
-		if (item->is_paused)
+		if (item->is_paused) {
 			continue;
+		}
 
 		lb_sys_event(item->inst, item, LB_SYS_EVENT_RESUMED);
 
@@ -1542,8 +1609,9 @@ HAPI int lb_pause(const char *pkgname, const char *id)
 	struct item *item;
 
 	inst = so_find_instance(pkgname, id);
-	if (!inst)
+	if (!inst) {
 		return LB_STATUS_ERROR_INVALID;
+	}
 
 	l = find_item(inst);
 	if (!l) {
@@ -1552,8 +1620,9 @@ HAPI int lb_pause(const char *pkgname, const char *id)
 	}
 
 	item = eina_list_data_get(l);
-	if (!item)
+	if (!item) {
 		return LB_STATUS_ERROR_FAULT;
+	}
 
 	if (item->deleteme) {
 		DbgPrint("Instance %s will be deleted (%s)\n", item->inst->item->pkgname, item->inst->id);
@@ -1562,8 +1631,9 @@ HAPI int lb_pause(const char *pkgname, const char *id)
 
 	item->is_paused = 1;
 
-	if (s_info.paused)
+	if (s_info.paused) {
 		return LB_STATUS_SUCCESS;
+	}
 
 	timer_freeze(item);
 
@@ -1580,8 +1650,9 @@ HAPI int lb_resume(const char *pkgname, const char *id)
 	int ret;
 
 	inst = so_find_instance(pkgname, id);
-	if (!inst)
+	if (!inst) {
 		return LB_STATUS_ERROR_INVALID;
+	}
 
 	l = find_item(inst);
 	if (!l) {
@@ -1590,8 +1661,9 @@ HAPI int lb_resume(const char *pkgname, const char *id)
 	}
 
 	item = eina_list_data_get(l);
-	if (!item)
+	if (!item) {
 		return LB_STATUS_ERROR_FAULT;
+	}
 
 	if (item->deleteme) {
 		DbgPrint("Instance %s will be deleted (%s)\n", item->inst->item->pkgname, item->inst->id);
@@ -1600,8 +1672,9 @@ HAPI int lb_resume(const char *pkgname, const char *id)
 
 	item->is_paused = 0;
 
-	if (s_info.paused)
+	if (s_info.paused) {
 		return LB_STATUS_SUCCESS;
+	}
 
 	lb_sys_event(inst, item, LB_SYS_EVENT_RESUMED);
 

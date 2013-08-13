@@ -271,8 +271,9 @@ static int method_update_content(struct event_arg *arg, void *data)
 static int method_pause(struct event_arg *arg, void *data)
 {
 	lb_pause_all();
-	if (s_info.ping_timer)
+	if (s_info.ping_timer) {
 		ecore_timer_freeze(s_info.ping_timer);
+	}
 
 	sqlite3_release_memory(SQLITE_FLUSH_MAX);
 	malloc_trim(0);
@@ -282,8 +283,9 @@ static int method_pause(struct event_arg *arg, void *data)
 static int method_resume(struct event_arg *arg, void *data)
 {
 	lb_resume_all();
-	if (s_info.ping_timer)
+	if (s_info.ping_timer) {
 		ecore_timer_thaw(s_info.ping_timer);
+	}
 	return LB_STATUS_SUCCESS;
 }
 
@@ -310,8 +312,9 @@ static int method_connected(struct event_arg *arg, void *data)
 	ret = provider_send_hello();
 	if (ret == 0) {
 		s_info.ping_timer = ecore_timer_add(DEFAULT_PING_TIME, send_ping_cb, NULL);
-		if (!s_info.ping_timer)
+		if (!s_info.ping_timer) {
 			ErrPrint("Failed to add a ping timer\n");
+		}
 	}
 
 	return LB_STATUS_SUCCESS;

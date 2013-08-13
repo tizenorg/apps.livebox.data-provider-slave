@@ -1000,7 +1000,9 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 	info = malloc(sizeof(*info));
 	if (!info) {
 		ErrPrint("Heap: %s\n", strerror(errno));
-		fclose(fp);
+		if (fclose(fp) != 0) {
+			ErrPrint("fclose: %s\n", strerror(errno));
+		}
 		return LB_STATUS_ERROR_MEMORY;
 	}
 	info->id = NULL;
@@ -1028,7 +1030,9 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 
 			if (!isspace(ch) && ch != EOF) {
 				ErrPrint("%d: Syntax error: Desc is not started with '{' or space - (%c = 0x%x)\n", lineno, ch, ch);
-				fclose(fp);
+				if (fclose(fp) != 0) {
+					ErrPrint("fclose: %s\n", strerror(errno));
+				}
 				return LB_STATUS_ERROR_INVALID;
 			}
 			break;
@@ -1045,7 +1049,9 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 			block = calloc(1, sizeof(*block));
 			if (!block) {
 				ErrPrint("Heap: %s\n", strerror(errno));
-				fclose(fp);
+				if (fclose(fp) != 0) {
+					ErrPrint("fclose: %s\n", strerror(errno));
+				}
 				return LB_STATUS_ERROR_MEMORY;
 			}
 
@@ -1354,14 +1360,19 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 		goto errout;
 	}
 
-	fclose(fp);
+	if (fclose(fp) != 0) {
+		ErrPrint("fclose: %s\n", strerror(errno));
+	}
 	return LB_STATUS_SUCCESS;
 
 errout:
 	ErrPrint("Parse error at %d file %s\n", lineno, util_basename(descfile));
-	if (block)
+	if (block) {
 		delete_block(block);
-	fclose(fp);
+	}
+	if (fclose(fp) != 0) {
+		ErrPrint("fclose: %s\n", strerror(errno));
+	}
 	return LB_STATUS_ERROR_INVALID;
 }
 

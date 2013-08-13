@@ -205,8 +205,9 @@ static inline int convert_shortcut_type_to_lb_type(int shortcut_type, char **str
 {
 	char *_str;
 
-	if (!str)
+	if (!str) {
 		str = &_str;
+	}
 
 	switch (shortcut_type) {
 	case LIVEBOX_TYPE_1x1:
@@ -267,8 +268,9 @@ static struct packet *icon_create(pid_t pid, int handle, const struct packet *pa
 	char _group[16];
 	char *size_str;
 
-	if (s_info.ttl_timer)
+	if (s_info.ttl_timer) {
 		ecore_timer_reset(s_info.ttl_timer);
+	}
 
 	ret = packet_get(packet, "sssis", &edje_path, &group, &desc_file, &size_type, &output);
 	if (ret != 5) {
@@ -334,8 +336,9 @@ static struct packet *icon_create(pid_t pid, int handle, const struct packet *pa
 	evas_object_resize(edje, w, h);
 	evas_object_show(edje);
 
-	if (script_handler_parse_desc(edje, desc_file) != LB_STATUS_SUCCESS)
+	if (script_handler_parse_desc(edje, desc_file) != LB_STATUS_SUCCESS) {
 		ErrPrint("Unable to parse the %s\n", desc_file);
+	}
 
 	flush_to_file(e, output, w, h);
 	evas_object_del(edje);
@@ -345,8 +348,9 @@ static struct packet *icon_create(pid_t pid, int handle, const struct packet *pa
 out:
 	if (ret < 0) {
 		/* Desc file should be deleted if it fails to create an icon image */
-		if (unlink(desc_file) < 0)
+		if (unlink(desc_file) < 0) {
 			ErrPrint("unlink(%s): %s\n", desc_file, strerror(errno));
+		}
 	}
 
 	return packet_create_reply(packet, "i", ret);
@@ -490,8 +494,9 @@ static bool app_create(void *data)
 	 * Send a request to reigister as a service.
 	 */
 	s_info.ttl_timer = ecore_timer_add(TTL, life_timer_cb, NULL);
-	if (!s_info.ttl_timer)
+	if (!s_info.ttl_timer) {
 		ErrPrint("Unable to register a life timer\n");
+	}
 
 	ret = vconf_notify_key_changed("db/setting/accessibility/font_name", font_changed_cb, NULL);
 	DbgPrint("System font is changed: %d\n", ret);
