@@ -350,6 +350,7 @@ static void app_service(service_h service, void *data)
 	DbgPrint("Secured: %s\n", secured);
 	ret = client_init(name);
 	free(name);
+	free(secured);
 
 	initialized = 1;
 	return;
