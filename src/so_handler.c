@@ -23,7 +23,6 @@
 #include <dlog.h>
 #include <Eina.h>
 #include <provider.h>
-#include <heap-monitor.h>
 #include <livebox-service.h>
 #include <livebox-errno.h>
 
@@ -125,7 +124,7 @@ static void delete_livebox(struct so_item *item)
 		ErrPrint("Package %s, finalize returns %d\n", item->pkgname, ret);
 	}
 
-	heap_monitor_del_target(item->so_fname);
+	main_heap_monitor_del_target(item->so_fname);
 	if (dlclose(item->handle) != 0) {
 		ErrPrint("dlclose: %s\n", dlerror());
 	}
@@ -277,7 +276,7 @@ static struct so_item *new_adaptor(const char *pkgname, const char *abi)
 		fault_unmark_call(pkgname, "initialize", __func__, USE_ALARM);
 		if (ret < 0) {
 			ErrPrint("Failed to initialize package %s\n", pkgname);
-			heap_monitor_del_target(item->so_fname);
+			main_heap_monitor_del_target(item->so_fname);
 			delete_livebox(item);
 			return NULL;
 		}
@@ -423,7 +422,7 @@ static struct so_item *new_livebox(const char *pkgname)
 		ErrPrint("symbol: livebox_is_pinned_up - %s\n", dlerror());
 	}
 
-	heap_monitor_add_target(item->so_fname);
+	main_heap_monitor_add_target(item->so_fname);
 
 	if (item->livebox.initialize) {
 		int ret;
@@ -432,7 +431,7 @@ static struct so_item *new_livebox(const char *pkgname)
 		fault_unmark_call(pkgname, "initialize", __func__, USE_ALARM);
 		if (ret < 0) {
 			ErrPrint("Failed to initialize package %s\n", pkgname);
-			heap_monitor_del_target(item->so_fname);
+			main_heap_monitor_del_target(item->so_fname);
 			delete_livebox(item);
 			return NULL;
 		}
@@ -992,7 +991,7 @@ HAPI int so_get_output_info(struct instance *inst, int *w, int *h, double *prior
 	}
 
 	if (main_heap_monitor_is_enabled()) {
-		DbgPrint("%s allocates %d bytes\n", item->pkgname, heap_monitor_target_usage(item->so_fname));
+		DbgPrint("%s allocates %d bytes\n", item->pkgname, main_heap_monitor_target_usage(item->so_fname));
 	}
 
 	return ret;

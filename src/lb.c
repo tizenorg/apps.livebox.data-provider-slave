@@ -854,7 +854,14 @@ int livebox_request_update_by_id(const char *filename)
 
 	if (so_current_op() != LIVEBOX_OP_UNKNOWN) {
 		ErrPrint("Current operation: %d\n", so_current_op());
-		return LB_STATUS_ERROR_INVALID;
+		/*!
+		 * \note
+		 * Some case requires to update the content of other box from livebox_XXX ABI.
+		 * In that case this function can be used so we have not to filter it from here.
+		 * ex) Setting accessibility.
+		 * Press the assistive light, turned on, need to update other instances too.
+		 * Then the box will use this function from livebox_clicked function.
+		 */
 	}
 
 	EINA_LIST_FOREACH(s_info.item_list, l, item) {

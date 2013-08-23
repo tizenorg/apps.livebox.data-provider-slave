@@ -19,6 +19,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <mcheck.h>
+#include <dlfcn.h>
 
 #include <Elementary.h>
 
@@ -35,7 +36,6 @@
 
 #include <dlog.h>
 #include <bundle.h>
-#include <heap-monitor.h>
 #include <livebox-service.h>
 #include <provider.h>
 #include <vconf.h>
@@ -63,13 +63,21 @@
 #endif
 
 static struct info {
-	int heap_monitor;
 	char *font_name;
 	int font_size;
+	int (*heap_monitor_initialized)(void);
+	size_t (*heap_monitor_target_usage)(const char *name);
+	int (*heap_monitor_add_target)(const char *name);
+	int (*heap_monitor_del_target)(const char *name);
+	void *heap_monitor;
 } s_info = {
-	.heap_monitor = 0,
 	.font_name = NULL,
 	.font_size = DEFAULT_FONT_SIZE,
+	.heap_monitor_initialized = NULL,
+	.heap_monitor_target_usage = NULL,
+	.heap_monitor_add_target = NULL,
+	.heap_monitor_del_target = NULL,
+	.heap_monitor = NULL,
 };
 
 static void update_font_cb(void *data)
@@ -335,13 +343,7 @@ static void app_service(service_h service, void *data)
 		return;
 	}
 
-	if (!!strcasecmp(secured, "true")) {
-		if (s_info.heap_monitor) {
-			heap_monitor_start();
-			/* Add GUARD */
-			// heap_monitor_add_target("/usr/apps/org.tizen."EXEC_NAME"/bin/"EXEC_NAME);
-		}
-	} else {
+	if (!strcasecmp(secured, "true")) {
 		/* Don't use the update timer */
 		lb_turn_secured_on();
 	}
@@ -355,15 +357,6 @@ static void app_service(service_h service, void *data)
 	initialized = 1;
 	return;
 }
-
-/* From GNU libc 2.14 this macro is defined, to declare
-   hook variables as volatile. Define it as empty for
-   older glibc versions */
-#ifndef __MALLOC_HOOK_VOLATILE
-     #define __MALLOC_HOOK_VOLATILE
-#endif
-
-void (*__MALLOC_HOOK_VOLATILE __malloc_initialize_hook)(void) = heap_monitor_init;
 
 #if defined(_ENABLE_MCHECK)
 static inline void mcheck_cb(enum mcheck_status status)
@@ -400,6 +393,10 @@ int main(int argc, char *argv[])
 	app_event_callback_s event_callback;
 	const char *option;
 
+	memset(argv[0], 0, strlen(argv[0]));
+	strcpy(argv[0], "/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave");
+	DbgPrint("Replace argv[0] with %s\n", argv[0]);
+
 #if defined(_ENABLE_MCHECK)
 	mcheck(mcheck_cb);
 #endif
@@ -410,7 +407,13 @@ int main(int argc, char *argv[])
 
 	option = getenv("PROVIDER_HEAP_MONITOR_START");
 	if (option && !strcasecmp(option, "true")) {
-		s_info.heap_monitor = 1;
+		s_info.heap_monitor = dlopen("/usr/lib/libheap-monitor.so", RTLD_NOW);
+		if (s_info.heap_monitor) {
+			s_info.heap_monitor_initialized = dlsym(s_info.heap_monitor, "heap_monitor_initialized");
+			s_info.heap_monitor_target_usage = dlsym(s_info.heap_monitor, "heap_monitor_target_usage");
+			s_info.heap_monitor_add_target = dlsym(s_info.heap_monitor, "heap_monitor_add_target");
+			s_info.heap_monitor_del_target = dlsym(s_info.heap_monitor, "heap_monitor_del_target");
+		}
 	}
 
 	setenv("BUFMGR_LOCK_TYPE", "once", 0);
@@ -429,12 +432,33 @@ int main(int argc, char *argv[])
 	event_callback.region_format_changed = app_region_changed;
 	ret = app_efl_main(&argc, &argv, &event_callback, NULL);
 	critical_log_fini();
+	ErrPrint("Failed to init: %d\n", ret);
+	if (s_info.heap_monitor) {
+		if (dlclose(s_info.heap_monitor) < 0) {
+			ErrPrint("dlclose: %s\n", strerror(errno));
+		}
+	}
 	return ret;
 }
 
 HAPI int main_heap_monitor_is_enabled(void)
 {
-	return s_info.heap_monitor;
+	return s_info.heap_monitor_initialized ? s_info.heap_monitor_initialized() : 0;
+}
+
+HAPI size_t main_heap_monitor_target_usage(const char *name)
+{
+	return s_info.heap_monitor_target_usage ? s_info.heap_monitor_target_usage(name) : 0;
+}
+
+HAPI int main_heap_monitor_add_target(const char *name)
+{
+	return s_info.heap_monitor_add_target ? s_info.heap_monitor_add_target(name) : 0;
+}
+
+HAPI int main_heap_monitor_del_target(const char *name)
+{
+	return s_info.heap_monitor_del_target ? s_info.heap_monitor_del_target(name) : 0;
 }
 
 /* End of a file */

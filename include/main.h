@@ -15,5 +15,8 @@
  */
 
 extern int main_heap_monitor_is_enabled(void);
+extern size_t main_heap_monitor_target_usage(const char *name);
+extern int main_heap_monitor_add_target(const char *name);
+extern int main_heap_monitor_del_target(const char *name);
 
 /* End of a file */

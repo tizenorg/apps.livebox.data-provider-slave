@@ -14,6 +14,8 @@
 
 		<!-- Executable file -->
 		<filesystem path="/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave" label="org.tizen.data-provider-slave" exec_label="org.tizen.data-provider-slave" />
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave/bin/icon-provider-slave" label="org.tizen.data-provider-slave" exec_label="org.tizen.data-provider-slave" />
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave.loader" label="org.tizen.data-provider-slave" exec_label="org.tizen.data-provider-slave" />
 
 		<!-- For the package manager -->
 		<filesystem path="/usr/share/packages/org.tizen.data-provider-slave.xml" label="_" />
