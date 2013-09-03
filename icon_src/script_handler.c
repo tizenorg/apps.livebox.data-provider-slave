@@ -111,8 +111,9 @@ static inline Evas_Object *find_edje(const char *id)
 
 	EINA_LIST_FOREACH(s_info.obj_list, l, child) {
 		obj_info = evas_object_data_get(child, "obj_info");
-		if (!obj_info || strcmp(obj_info->id, id))
+		if (!obj_info || strcmp(obj_info->id, id)) {
 			continue;
+		}
 
 		return child;
 	}
@@ -196,8 +197,9 @@ static void parse_aspect(struct image_option *img_opt, const char *value, int le
 		len--;
 	}
 
-	if (len < 4)
+	if (len < 4) {
 		return;
+	}
 
 	img_opt->aspect = !strncasecmp(value, "true", 4);
 	DbgPrint("Parsed ASPECT: %d (%s)\n", img_opt->aspect, value);
@@ -210,8 +212,9 @@ static void parse_orient(struct image_option *img_opt, const char *value, int le
 		len--;
 	}
 
-	if (len < 4)
+	if (len < 4) {
 		return;
+	}
 
 	img_opt->orient = !strncasecmp(value, "true", 4);
 	DbgPrint("Parsed ORIENT: %d (%s)\n", img_opt->orient, value);
@@ -252,12 +255,13 @@ static void parse_fill(struct image_option *img_opt, const char *value, int len)
 		len--;
 	}
 
-	if (!strncasecmp(value, "in-size", len))
+	if (!strncasecmp(value, "in-size", len)) {
 		img_opt->fill = FILL_IN_SIZE;
-	else if (!strncasecmp(value, "over-size", len))
+	} else if (!strncasecmp(value, "over-size", len)) {
 		img_opt->fill = FILL_OVER_SIZE;
-	else
+	} else {
 		img_opt->fill = FILL_DISABLE;
+	}
 
 	DbgPrint("Parsed FILL: %d (%s)\n", img_opt->fill, value);
 }
@@ -299,8 +303,9 @@ static inline void parse_image_option(const char *option, struct image_option *i
 	int idx;
 	int tag;
 
-	if (!option || !*option)
+	if (!option || !*option) {
 		return;
+	}
 
 	state = STATE_START;
 	/*!
@@ -374,10 +379,11 @@ static inline void parse_image_option(const char *option, struct image_option *i
 			}
 			break;
 		case STATE_ERROR:
-			if (*ptr == ';')
+			if (*ptr == ';') {
 				state = STATE_START;
-			else if (*ptr == '\0')
+			} else if (*ptr == '\0') {
 				state = STATE_END;
+			}
 			break;
 		default:
 			break;
@@ -420,8 +426,9 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 		Eina_List *n;
 
 		EINA_LIST_FOREACH_SAFE(obj_info->children, l, n, child) {
-			if (child->obj != img)
+			if (child->obj != img) {
 				continue;
+			}
 
 			obj_info->children = eina_list_remove(obj_info->children, child);
 			free(child->part);
@@ -701,8 +708,9 @@ static void edje_del_cb(void *_info, Evas *e, Evas_Object *obj, void *event_info
 		}
 
 		EINA_LIST_FOREACH_SAFE(obj_info->children, l, n, child) {
-			if (child->obj != obj)
+			if (child->obj != obj) {
 				continue;
+			}
 
 			obj_info->children = eina_list_remove(obj_info->children, child);
 			free(child->part);
@@ -725,8 +733,9 @@ static void edje_del_cb(void *_info, Evas *e, Evas_Object *obj, void *event_info
 
 	EINA_LIST_FREE(obj_info->children, child) {
 		DbgPrint("delete object %s %p\n", child->part, child->obj);
-		if (child->obj)
+		if (child->obj) {
 			evas_object_del(child->obj);
+		}
 
 		free(child->part);
 		free(child);
@@ -765,8 +774,9 @@ static int update_script_script(Evas_Object *edje, struct block *block)
 		Eina_List *n;
 
 		EINA_LIST_FOREACH_SAFE(obj_info->children, l, n, child) {
-			if (child->obj != obj)
+			if (child->obj != obj) {
 				continue;
+			}
 
 			obj_info->children = eina_list_remove(obj_info->children, child);
 
@@ -929,15 +939,17 @@ static inline void consuming_parsed_block(Evas_Object *edje, int lineno, struct 
 	register int i;
 
 	for (i = 0; handlers[i].type; i++) {
-		if (strcasecmp(handlers[i].type, block->type))
+		if (strcasecmp(handlers[i].type, block->type)) {
 			continue;
+		}
 
 		handlers[i].handler(edje, block);
 		break;
 	}
 
-	if (!handlers[i].type)
+	if (!handlers[i].type) {
 		ErrPrint("%d: Unknown block type: %s\n", lineno, block->type);
+	}
 
 	delete_block(block);
 
@@ -992,8 +1004,9 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 	 * \note
 	 * After open a descfile, we can delete it.
 	 */
-	if (unlink(descfile) < 0)
+	if (unlink(descfile) < 0) {
 		ErrPrint("Unable to delete file\n");
+	}
 
 	DbgPrint("Parsing %s\n", descfile);
 	DbgPrint("Building obj_info\n");
@@ -1018,8 +1031,9 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 	block = NULL;
 	while (!feof(fp)) {
 		ch = getc(fp);
-		if (ch == '\n')
+		if (ch == '\n') {
 			lineno++;
+		}
 
 		switch (state) {
 		case UNKNOWN:
@@ -1038,8 +1052,9 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 			break;
 
 		case BLOCK_OPEN:
-			if (isblank(ch))
+			if (isblank(ch)) {
 				break;
+			}
 
 			if (ch != '\n') {
 				ErrPrint("%d: Syntax error: New line must has to be started right after '{'\n", lineno);
@@ -1061,8 +1076,9 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 			break;
 
 		case FIELD:
-			if (isspace(ch))
+			if (isspace(ch)) {
 				break;
+			}
 
 			if (ch == '}') {
 				state = BLOCK_CLOSE;
@@ -1147,16 +1163,19 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 				break;
 			}
 
-			if (ch == '\n')
+			if (ch == '\n') {
 				goto errout;
+			}
 
 			if (field_name[field_idx][idx] != ch) {
 				ungetc(ch, fp);
-				if (ch == '\n')
+				if (ch == '\n') {
 					lineno--;
+				}
 
-				while (--idx >= 0)
+				while (--idx >= 0) {
 					ungetc(field_name[field_idx][idx], fp);
+				}
 
 				field_idx++;
 				if (field_name[field_idx] == NULL) {
