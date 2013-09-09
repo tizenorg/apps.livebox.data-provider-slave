@@ -64,7 +64,7 @@ struct item {
 
 static struct info {
 	Eina_List *item_list;
-	struct item *update;
+	Eina_List *update_list;
 	Eina_List *pending_list;
 	Ecore_Timer *pending_timer;
 	Eina_List *pd_open_pending_list;
@@ -75,7 +75,7 @@ static struct info {
 	int pending_timer_freezed;
 } s_info  = {
 	.item_list = NULL,
-	.update = NULL,
+	.update_list = NULL,
 	.pending_list = NULL,
 	.pending_timer = NULL,
 	.pd_open_pending_list = NULL,
@@ -145,7 +145,7 @@ static Eina_Bool pd_open_pended_cmd_consumer_cb(void *data)
 		goto cleanout;
 	}
 
-	if (s_info.update) {
+	if (eina_list_data_find(s_info.update_list, item)) {
 		return ECORE_CALLBACK_RENEW;
 	}
 
@@ -176,7 +176,7 @@ static Eina_Bool pended_cmd_consumer_cb(void *data)
 		goto cleanout;
 	}
 
-	if (s_info.update || pd_is_opened(item->inst->item->pkgname) < 0) {
+	if (eina_list_data_find(s_info.update_list, item) || pd_is_opened(item->inst->item->pkgname) < 0) {
 		return ECORE_CALLBACK_RENEW;
 	}
 
@@ -433,7 +433,7 @@ static inline void update_monitor_cnt(struct item *item)
 	 * file update callback.
 	 */
 	if (interval >= MINIMUM_UPDATE_INTERVAL) {
-		if (s_info.update == item) {
+		if (eina_list_data_find(s_info.update_list, item)) {
 			/*!
 			 * \note
 			 * If already in updating mode,
@@ -492,9 +492,7 @@ static inline int output_handler(struct item *item)
 			item->monitor = NULL;
 		}
 
-		if (s_info.update == item) {
-			s_info.update = NULL;
-		}
+		s_info.update_list = eina_list_remove(s_info.update_list, item);
 
 		if (item->deleteme) {
 			provider_send_deleted(item->inst->item->pkgname, item->inst->id);
@@ -630,13 +628,13 @@ static Eina_Bool update_timeout_cb(void *data)
 
 	ErrPrint("UPDATE TIMEOUT ========> %s - %s\n", item->inst->item->pkgname, item->inst->id);
 
-	if (s_info.update != item) {
+	if (!eina_list_data_find(s_info.update_list, item)) {
 		ErrPrint("Updating item is not matched\n");
 	}
 
 	fault_unmark_call(item->inst->item->pkgname, item->inst->id, "update,crashed", NO_ALARM);
 	fault_mark_call(item->inst->item->pkgname, item->inst->id, "update,timeout", NO_ALARM, DEFAULT_LIFE_TIMER);
-	s_info.update = NULL;
+	s_info.update_list = eina_list_remove(s_info.update_list, item);
 
 	exit(ETIME);
 	return ECORE_CALLBACK_CANCEL;
@@ -688,8 +686,12 @@ static Eina_Bool updator_cb(void *data)
 		return ECORE_CALLBACK_RENEW;
 	}
 
-	if (s_info.update || pd_is_opened(item->inst->item->pkgname) < 0) {
-		DbgPrint("%s is busy\n", s_info.update ? s_info.update->inst->id : item->inst->id);
+	/*!
+	 * \note
+	 * Check the update_list, if you want make serialized update
+	 */
+	if (/*s_info.update_list || */pd_is_opened(item->inst->item->pkgname) < 0) {
+		DbgPrint("%s is busy\n", item->inst->id);
 		(void)append_pending_list(item);
 		return ECORE_CALLBACK_RENEW;
 	}
@@ -745,7 +747,7 @@ static Eina_Bool updator_cb(void *data)
 	 * This should be updated after "update_monitor_cnt" function call,
 	 * because the update_monitor_cnt function will see the s_info.update variable,
 	 */
-	s_info.update = item;
+	s_info.update_list = eina_list_append(s_info.update_list, item);
 
 	return ECORE_CALLBACK_RENEW;
 }
@@ -1113,9 +1115,7 @@ HAPI int lb_destroy(const char *pkgname, const char *id)
 	item = eina_list_data_get(l);
 	s_info.item_list = eina_list_remove_list(s_info.item_list, l);
 
-	if (s_info.update == item) {
-		s_info.update = NULL;
-	}
+	s_info.update_list = eina_list_remove(s_info.update_list, item);
 
 	if (item->timer) {
 		clear_from_pd_open_pending_list(item);
