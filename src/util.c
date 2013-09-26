@@ -68,6 +68,9 @@ HAPI int util_get_filesize(const char *filename)
 
 HAPI double util_timestamp(void)
 {
+#if defined(_USE_ECORE_TIME_GET)
+	return ecore_time_get();
+#else
 	struct timeval tv;
 
 	if (gettimeofday(&tv, NULL) < 0) {
@@ -79,6 +82,7 @@ HAPI double util_timestamp(void)
 	}
 
 	return (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0f;
+#endif
 }
 
 HAPI const char *util_basename(const char *name)
@@ -164,7 +168,6 @@ HAPI const char *util_uri_to_path(const char *uri)
 
 HAPI double util_time_delay_for_compensation(double period)
 {
-	struct timeval tv;
 	unsigned long long curtime;
 	unsigned long long _period;
 	unsigned long long remain;
@@ -175,12 +178,18 @@ HAPI double util_time_delay_for_compensation(double period)
 		return 0.0f;
 	}
 
+#if defined(_USE_ECORE_TIME_GET)
+	curtime = ecore_time_get() * 1000000llu;
+#else
+	struct timeval tv;
 	if (gettimeofday(&tv, NULL) < 0) {
 		ErrPrint("gettimeofday: %s\n", strerror(errno));
 		return period;
 	}
 
 	curtime = (unsigned long long)tv.tv_sec * 1000000llu + (unsigned long long)tv.tv_usec;
+#endif
+
 	_period = (unsigned long long)(period * (double)1000000);
 	if (_period == 0llu) {
 		ErrPrint("%lf <> %llu\n", period, _period);

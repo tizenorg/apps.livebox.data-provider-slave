@@ -395,8 +395,6 @@ static inline int timer_thaw(struct item *item)
 
 static void timer_freeze(struct item *item)
 {
-	struct timeval tv;
-
 	if (!item->timer) {
 		return;
 	}
@@ -407,6 +405,10 @@ static void timer_freeze(struct item *item)
 		return;
 	}
 
+#if defined(_USE_ECORE_TIME_GET)
+	item->sleep_at = ecore_time_get();
+#else
+	struct timeval tv;
 	if (gettimeofday(&tv, NULL) < 0) {
 		ErrPrint("gettimeofday: %s\n", strerror(errno));
 		tv.tv_sec = 0;
@@ -414,6 +416,7 @@ static void timer_freeze(struct item *item)
 	}
 
 	item->sleep_at = (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0f;
+#endif
 }
 
 static inline void update_monitor_cnt(struct item *item)

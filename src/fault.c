@@ -30,6 +30,7 @@
 
 #include <dlog.h>
 #include <Eina.h>
+#include <Ecore.h>
 
 #include <provider.h>
 
@@ -42,7 +43,11 @@
 #include "util.h"
 
 static struct info {
+#if defined(_USE_ECORE_TIME_GET)
+	double alarm_tv;
+#else
 	struct timeval alarm_tv;
+#endif
 	int marked;
 	int disable_checker;
 } s_info = {
@@ -58,13 +63,23 @@ static void signal_handler(int signum, siginfo_t *info, void *unused)
 	so_fname = util_get_current_module(&symbol);
 
 	if (info->si_signo == SIGALRM) {
-		struct timeval tv;
-		struct timeval res_tv;
-
 		if (!s_info.marked) {
 			DbgPrint("Ignore false alarm signal [false]\n");
 			return;
 		}
+
+#if defined(_USE_ECORE_TIME_GET)
+		double tv;
+		tv = ecore_time_get();
+		if (tv - s_info.alarm_tv < DEFAULT_LIFE_TIMER) {
+			DbgPrint("Ignore false alarm signal [%lf]\n", tv - s_info.alarm_tv);
+			return;
+		}
+
+		CRITICAL_LOG("ALARM: %lf (%d, %d)\n", tv - s_info.alarm_tv, DEFAULT_LIFE_TIMER, DEFAULT_LOAD_TIMER);
+#else
+		struct timeval tv;
+		struct timeval res_tv;
 
 		if (gettimeofday(&tv, NULL) < 0) {
 			ErrPrint("gettimeofday: %s\n", strerror(errno));
@@ -85,6 +100,7 @@ static void signal_handler(int signum, siginfo_t *info, void *unused)
 
 		CRITICAL_LOG("ALARM: %d.%d (%d, %d)\n",
 				res_tv.tv_sec, res_tv.tv_usec, DEFAULT_LIFE_TIMER, DEFAULT_LOAD_TIMER);
+#endif
 	} else if (so_fname) {
 		int fd;
 		char log_fname[256];
@@ -191,11 +207,15 @@ HAPI int fault_mark_call(const char *pkgname, const char *filename, const char *
 	 *   Enable alarm for detecting infinite loop
 	 */
 	if (!noalarm) {
+#if defined(_USE_ECORE_TIME_GET)
+		s_info.alarm_tv = ecore_time_get();
+#else
 		if (gettimeofday(&s_info.alarm_tv, NULL) < 0) {
 			ErrPrint("gettimeofday: %s\n", strerror(errno));
 			s_info.alarm_tv.tv_sec = 0;
 			s_info.alarm_tv.tv_usec = 0;
 		}
+#endif
 		s_info.marked = 1;
 		alarm(life_time);
 	}

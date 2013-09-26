@@ -387,6 +387,7 @@ static inline void mcheck_cb(enum mcheck_status status)
 }
 #endif
 
+#define BIN_PATH "/usr/apps/org.tizen.data-provider-slave/bin/"
 int main(int argc, char *argv[])
 {
 	int ret;
@@ -394,7 +395,7 @@ int main(int argc, char *argv[])
 	const char *option;
 
 	memset(argv[0], 0, strlen(argv[0]));
-	strcpy(argv[0], "/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave");
+	strcpy(argv[0], BIN_PATH "data-provider-slave");
 	DbgPrint("Replace argv[0] with %s\n", argv[0]);
 
 #if defined(_ENABLE_MCHECK)
@@ -438,6 +439,7 @@ int main(int argc, char *argv[])
 			ErrPrint("dlclose: %s\n", strerror(errno));
 		}
 	}
+
 	return ret;
 }
 
