@@ -25,3 +25,4 @@ e17 org.tizen.data-provider-slave rwx
 org.tizen.app-tray org.tizen.data-provider-slave rx
 dbus org.tizen.data-provider-slave rwx
 org.tizen.data-provider-slave sound_server rw
+org.tizen.data-provider-slave tts-server rwx
