@@ -62,12 +62,10 @@
 int script_handler_parse_desc(Evas_Object *edje, const char *descfile);
 
 static struct info {
-	Ecore_Timer *ttl_timer;
 	int client_fd;
 	const char *socket_file;
 	char *font_name;
 } s_info = {
-	.ttl_timer = NULL,
 	.client_fd = -1,
 	.socket_file = UTILITY_ADDR,
 	.font_name = NULL,
@@ -268,10 +266,6 @@ static struct packet *icon_create(pid_t pid, int handle, const struct packet *pa
 	char _group[16];
 	char *size_str;
 
-	if (s_info.ttl_timer) {
-		ecore_timer_reset(s_info.ttl_timer);
-	}
-
 	ret = packet_get(packet, "sssis", &edje_path, &group, &desc_file, &size_type, &output);
 	if (ret != 5) {
 		ErrPrint("Invalid parameters");
@@ -400,17 +394,6 @@ static inline int client_init(void)
 	return ret;
 }
 
-static Eina_Bool life_timer_cb(void *data)
-{
-	/* Terminated */
-
-	DbgPrint("Life timer expired\n");
-
-	s_info.ttl_timer = NULL;
-	elm_exit();
-	return ECORE_CALLBACK_CANCEL;
-}
-
 static inline void client_fini(void)
 {
 	if (s_info.client_fd < 0) {
@@ -493,11 +476,6 @@ static bool app_create(void *data)
 	/*!
 	 * Send a request to reigister as a service.
 	 */
-	s_info.ttl_timer = ecore_timer_add(TTL, life_timer_cb, NULL);
-	if (!s_info.ttl_timer) {
-		ErrPrint("Unable to register a life timer\n");
-	}
-
 	ret = vconf_notify_key_changed("db/setting/accessibility/font_name", font_changed_cb, NULL);
 	DbgPrint("System font is changed: %d\n", ret);
 
@@ -511,11 +489,6 @@ static void app_terminate(void *data)
 
 	ret = vconf_ignore_key_changed("db/setting/accessibility/font_name", font_changed_cb);
 	DbgPrint("Remove font change callback: %d\n", ret);
-
-	if (s_info.ttl_timer) {
-		ecore_timer_del(s_info.ttl_timer);
-		s_info.ttl_timer = NULL;
-	}
 
 	client_fini();
 

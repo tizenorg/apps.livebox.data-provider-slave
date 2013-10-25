@@ -1,12 +1,13 @@
 %define app_data /opt/usr/apps/org.tizen.data-provider-slave/data
 
 Name: org.tizen.data-provider-slave
-Summary: Plugin type livebox service provider.
-Version: 0.12.13
+Summary: Plugin type livebox service provider
+Version: 0.12.14
 Release: 1
 Group: HomeTF/Livebox
 License: Flora License
 Source0: %{name}-%{version}.tar.gz
+Source1001: %{name}.manifest
 BuildRequires: cmake, gettext-tools, coreutils, edje-bin
 BuildRequires: pkgconfig(appcore-efl)
 BuildRequires: pkgconfig(ail)
@@ -42,6 +43,7 @@ Supporting the In-house livebox only.
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 
 %build
 %if 0%{?tizen_build_binary_release_type_eng}
@@ -70,7 +72,7 @@ chown 5000:5000 %{app_data}
 chmod 755 %{app_data}
 
 %files -n org.tizen.data-provider-slave
-%manifest org.tizen.data-provider-slave.manifest
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_prefix}/apps/org.tizen.data-provider-slave
 %{_datarootdir}/packages/org.tizen.data-provider-slave.xml
