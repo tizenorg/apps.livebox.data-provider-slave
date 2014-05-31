@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest xmlns="http://tizen.org/ns/packages" package="org.tizen.data-provider-slave" version="0.5.4" install-location="auto">
+	<label>Dynamic Box Provider (Default)</label>
+	<author email="nicesj.park@samsung.com" href="www.samsung.com">Sung-jae Park</author>
+	<author email="yjoo93.park@samsung.com" href="www.samsung.com">Youngjoo Park</author>
+	<description>Dynamic Box Provider (Default)</description>
+
+	<ui-application appid="org.tizen.data-provider-slave" exec="/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave" nodisplay="true" multiple="true" type="capp" taskmanage="false">
+		<icon>org.tizen.data-provider-slave.png</icon>
+		<label>Dynamic Box Provider (Default)</label>
+		<label xml:lang="en-us">Dynamic Box Provider (Default)</label>
+	</ui-application>
+	<privileges>
+		<privilege>http://tizen.org/privilege/location</privilege>
+	</privileges>
+
+	<ui-application appid="org.tizen.data-provider-slave.icon" exec="/usr/apps/org.tizen.data-provider-slave/bin/icon-provider-slave" nodisplay="true" multiple="false" type="capp" taskmanage="false">
+		<icon>org.tizen.icon-provider-slave.png</icon>
+		<label>Icon Provider (Default)</label>
+		<label xml:lang="en-us">Icon Provider (Default)</label>
+	</ui-application>
+</manifest>

@@ -1,0 +1,33 @@
+<manifest>
+	<!-- Provider slave label -->
+	<define>
+		<domain name="org.tizen.data-provider-slave" policy="shared" />
+		<request>
+			<smack request="contacts-service" type="rwx" />
+			<smack request="contacts-service::vconf" type="rwxl" />
+			<smack request="contacts-service::db" type="rw" />
+			<smack request="contacts-service::svc" type="rlw" />
+			<smack request="contacts-service::vconf-private" type="rl" />
+		</request>
+	</define>
+	
+	<assign>
+		<!-- Application folder -->
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave" label="org.tizen.data-provider-slave" />
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave/bin" label="org.tizen.data-provider-slave" />
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave/author-signature.xml" label="_" />
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave/signature1.xml" label="_" />
+
+		<!-- Executable file -->
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave" label="org.tizen.data-provider-slave" exec_label="org.tizen.data-provider-slave" />
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave/bin/icon-provider-slave" label="org.tizen.data-provider-slave" exec_label="org.tizen.data-provider-slave" />
+		<filesystem path="/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave.loader" label="org.tizen.data-provider-slave" exec_label="org.tizen.data-provider-slave" />
+
+		<!-- For the package manager -->
+		<filesystem path="/usr/share/packages/org.tizen.data-provider-slave.xml" label="_" />
+
+		<!-- Application Data folder -->
+		<filesystem path="/opt/usr/apps/org.tizen.data-provider-slave/data" label="org.tizen.data-provider-slave" />
+		<filesystem path="/opt/usr/apps/org.tizen.data-provider-slave" label="org.tizen.data-provider-slave" />
+	</assign>
+</manifest>
