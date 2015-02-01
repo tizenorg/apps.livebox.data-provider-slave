@@ -37,9 +37,9 @@
 #include <vconf.h>
 #include <dlog.h>
 #include <bundle.h>
-#include <livebox-service.h>
-#include <livebox-errno.h>
-#include <provider.h>
+#include <dynamicbox_service.h>
+#include <dynamicbox_errno.h>
+#include <dynamicbox_provider.h>
 
 #include <system_settings.h>
 
@@ -48,13 +48,19 @@
 #include <com-core_packet.h>
 
 #include <shortcut.h>
+#include <shortcut_private.h>
 
 #include "util.h"
 #include "debug.h"
 
 #define UTILITY_ADDR	"/tmp/.utility.service"
+#if !defined(DEFAULT_ICON_LAYOUT)
 #define DEFAULT_ICON_LAYOUT "/usr/apps/org.tizen.data-provider-slave/res/edje/icon.edj"
+#endif
+
+#if !defined(DEFAULT_ICON_GROUP)
 #define DEFAULT_ICON_GROUP "default"
+#endif
 
 #define TEXT_CLASS	"tizen"
 #define DEFAULT_FONT_SIZE	-100
@@ -75,21 +81,21 @@ static struct info {
 #define QUALITY_N_COMPRESS "quality=100 compress=1"
 
 /*!
- * Defined for liblivebox
+ * Defined for libdynamicbox
  */
-const char *livebox_find_pkgname(const char *filename)
+const char *dynamicbox_find_pkgname(const char *filename)
 {
 	return NULL;
 }
 
-int livebox_request_update_by_id(const char *filename)
+int dynamicbox_request_update_by_id(const char *filename)
 {
-	return LB_STATUS_ERROR_NOT_EXIST;
+	return DBOX_STATUS_ERROR_NOT_EXIST;
 }
 
-int livebox_trigger_update_monitor(const char *id, int is_pd)
+int dynamicbox_trigger_update_monitor(const char *id, int is_pd)
 {
-	return LB_STATUS_ERROR_INVALID;
+	return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 }
 
 static inline Evas *create_virtual_canvas(int w, int h)
@@ -208,45 +214,45 @@ static inline int convert_shortcut_type_to_lb_type(int shortcut_type, char **str
 	}
 
 	switch (shortcut_type) {
-	case LIVEBOX_TYPE_1x1:
+	case DYNAMICBOX_TYPE_1x1:
 		*str = "1x1";
-		return LB_SIZE_TYPE_1x1;
-	case LIVEBOX_TYPE_2x1:
+		return DBOX_SIZE_TYPE_1x1;
+	case DYNAMICBOX_TYPE_2x1:
 		*str = "2x1";
-		return LB_SIZE_TYPE_2x1;
-	case LIVEBOX_TYPE_2x2:
+		return DBOX_SIZE_TYPE_2x1;
+	case DYNAMICBOX_TYPE_2x2:
 		*str = "2x2";
-		return LB_SIZE_TYPE_2x2;
-	case LIVEBOX_TYPE_4x1:
+		return DBOX_SIZE_TYPE_2x2;
+	case DYNAMICBOX_TYPE_4x1:
 		*str = "4x1";
-		return LB_SIZE_TYPE_4x1;
-	case LIVEBOX_TYPE_4x2:
+		return DBOX_SIZE_TYPE_4x1;
+	case DYNAMICBOX_TYPE_4x2:
 		*str = "4x2";
-		return LB_SIZE_TYPE_4x2;
-	case LIVEBOX_TYPE_4x3:
+		return DBOX_SIZE_TYPE_4x2;
+	case DYNAMICBOX_TYPE_4x3:
 		*str = "4x3";
-		return LB_SIZE_TYPE_4x3;
-	case LIVEBOX_TYPE_4x4:
+		return DBOX_SIZE_TYPE_4x3;
+	case DYNAMICBOX_TYPE_4x4:
 		*str = "4x4";
-		return LB_SIZE_TYPE_4x4;
-	case LIVEBOX_TYPE_4x5:
+		return DBOX_SIZE_TYPE_4x4;
+	case DYNAMICBOX_TYPE_4x5:
 		*str = "4x5";
-		return LB_SIZE_TYPE_4x5;
-	case LIVEBOX_TYPE_4x6:
+		return DBOX_SIZE_TYPE_4x5;
+	case DYNAMICBOX_TYPE_4x6:
 		*str = "4x6";
-		return LB_SIZE_TYPE_4x6;
-	case LIVEBOX_TYPE_EASY_1x1:
+		return DBOX_SIZE_TYPE_4x6;
+	case DYNAMICBOX_TYPE_EASY_1x1:
 		*str = "easy,1x1";
-		return LB_SIZE_TYPE_EASY_1x1;
-	case LIVEBOX_TYPE_EASY_3x1:
+		return DBOX_SIZE_TYPE_EASY_1x1;
+	case DYNAMICBOX_TYPE_EASY_3x1:
 		*str = "easy,3x1";
-		return LB_SIZE_TYPE_EASY_3x1;
-	case LIVEBOX_TYPE_EASY_3x3:
+		return DBOX_SIZE_TYPE_EASY_3x1;
+	case DYNAMICBOX_TYPE_EASY_3x3:
 		*str = "easy,3x3";
-		return LB_SIZE_TYPE_EASY_3x3;
+		return DBOX_SIZE_TYPE_EASY_3x3;
 	default:
 		*str = "?x?";
-		return LB_SIZE_TYPE_UNKNOWN;
+		return DBOX_SIZE_TYPE_UNKNOWN;
 	}
 }
 
@@ -284,8 +290,8 @@ static struct packet *icon_create(pid_t pid, int handle, const struct packet *pa
 	}
 	DbgPrint("Selected layout: %s(%s)\n", edje_path, group);
 
-	ret = livebox_service_get_size(size_type, &w, &h);
-	if (ret != LB_STATUS_SUCCESS) {
+	ret = dynamicbox_service_get_size(size_type, &w, &h);
+	if (ret != DBOX_STATUS_ERROR_NONE) {
 		ErrPrint("Unable to get size(%d): %d\n", size_type, ret);
 		goto out;
 	}
@@ -293,7 +299,7 @@ static struct packet *icon_create(pid_t pid, int handle, const struct packet *pa
 	e = create_virtual_canvas(w, h);
 	if (!e) {
 		ErrPrint("Unable to create a canvas: %dx%d\n", w, h);
-		ret = LB_STATUS_ERROR_FAULT;
+		ret = DBOX_STATUS_ERROR_FAULT;
 		goto out;
 	}
 
@@ -301,7 +307,7 @@ static struct packet *icon_create(pid_t pid, int handle, const struct packet *pa
 	if (!parent) {
 		ErrPrint("Unable to create a parent\n");
 		destroy_virtual_canvas(e);
-		ret = LB_STATUS_ERROR_FAULT;
+		ret = DBOX_STATUS_ERROR_FAULT;
 		goto out;
 	}
 
@@ -332,7 +338,7 @@ static struct packet *icon_create(pid_t pid, int handle, const struct packet *pa
 	evas_object_resize(edje, w, h);
 	evas_object_show(edje);
 
-	if (script_handler_parse_desc(edje, desc_file) != LB_STATUS_SUCCESS) {
+	if (script_handler_parse_desc(edje, desc_file) != DBOX_STATUS_ERROR_NONE) {
 		ErrPrint("Unable to parse the %s\n", desc_file);
 	}
 
@@ -434,9 +440,7 @@ static void font_changed_cb(keynode_t *node, void *user_data)
 {
 	char *font_name;
 
-#if defined(WEARABLE)
 	evas_font_reinit();
-#endif
 
 	if (s_info.font_name) {
 		font_name = vconf_get_str("db/setting/accessibility/font_name");
@@ -519,7 +523,7 @@ static void app_resume(void *data)
 	return;
 }
 
-static void app_service(service_h service, void *data)
+static void app_control(app_control_h service, void *data)
 {
 }
 
@@ -532,7 +536,7 @@ int main(int argc, char *argv[])
 	event_callback.terminate = app_terminate;
 	event_callback.pause = app_pause;
 	event_callback.resume = app_resume;
-	event_callback.service = app_service;
+	event_callback.app_control = app_control;
 	event_callback.low_memory = NULL;
 	event_callback.low_battery = NULL;
 	event_callback.device_orientation = NULL;

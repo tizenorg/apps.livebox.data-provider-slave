@@ -12,7 +12,7 @@
 #include <efl_assist.h>
 
 #include <dlog.h>
-#include <livebox-errno.h>
+#include <dynamicbox_errno.h>
 
 #include "debug.h"
 #include "util.h"
@@ -133,14 +133,14 @@ static int update_script_color(Evas_Object *edje, struct block *block)
 
 	if (!block || !block->part || !block->data) {
 		ErrPrint("Block or part or data is not valid\n");
-		return LB_STATUS_ERROR_INVALID;
+		return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 	}
 
 	if (block->id) {
 		edje = find_edje(block->id);
 		if (!edje) {
 			ErrPrint("Edje is not exists: %s\n", block->id);
-			return LB_STATUS_ERROR_NOT_EXIST;
+			return DBOX_STATUS_ERROR_NOT_EXIST;
 		}
 		DbgPrint("EDJE[%s] is selected (%p)\n", block->id, edje);
 	}
@@ -151,7 +151,7 @@ static int update_script_color(Evas_Object *edje, struct block *block)
 					r + 2, g + 2, b + 2, a + 2);	/* SHADOW */
 	if (ret != 12) {
 		DbgPrint("id[%s] part[%s] rgba[%s]\n", block->id, block->part, block->data);
-		return LB_STATUS_ERROR_INVALID;
+		return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 	}
 
 	ret = edje_object_color_class_set(elm_layout_edje_get(edje), block->part,
@@ -160,27 +160,27 @@ static int update_script_color(Evas_Object *edje, struct block *block)
 				r[2], g[2], b[2], a[2]); /* SHADOW */
 
 	DbgPrint("color class is %s changed", ret == EINA_TRUE ? "successfully" : "not");
-	return LB_STATUS_SUCCESS;
+	return DBOX_STATUS_ERROR_NONE;
 }
 
 static int update_script_text(Evas_Object *edje, struct block *block)
 {
 	if (!block || !block->part || !block->data) {
 		ErrPrint("Block or part or data is not valid\n");
-		return LB_STATUS_ERROR_INVALID;
+		return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 	}
 
 	if (block->id) {
 		edje = find_edje(block->id);
 		if (!edje) {
 			ErrPrint("Failed to find EDJE\n");
-			return LB_STATUS_ERROR_NOT_EXIST;
+			return DBOX_STATUS_ERROR_NOT_EXIST;
 		}
 	}
 
 	elm_object_part_text_set(edje, block->part, block->data ? block->data : "");
 
-	return LB_STATUS_SUCCESS;
+	return DBOX_STATUS_ERROR_NONE;
 }
 
 static void parse_aspect(struct image_option *img_opt, const char *value, int len)
@@ -428,14 +428,14 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 		edje = find_edje(block->id);
 		if (!edje) {
 			ErrPrint("No such object: %s\n", block->id);
-			return LB_STATUS_ERROR_NOT_EXIST;
+			return DBOX_STATUS_ERROR_NOT_EXIST;
 		}
 	}
 
 	obj_info = evas_object_data_get(edje, "obj_info");
 	if (!obj_info) {
 		ErrPrint("Object info is not available\n");
-		return LB_STATUS_ERROR_FAULT;
+		return DBOX_STATUS_ERROR_FAULT;
 	}
 
 	img = elm_object_part_content_unset(edje, block->part);
@@ -460,20 +460,20 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 
 	if (!block->data || !strlen(block->data) || access(block->data, R_OK) != 0) {
 		DbgPrint("SKIP - Path: [%s]\n", block->data);
-		return LB_STATUS_SUCCESS;
+		return DBOX_STATUS_ERROR_NONE;
 	}
 
 	child = malloc(sizeof(*child));
 	if (!child) {
 		ErrPrint("Heap: %s\n", strerror(errno));
-		return LB_STATUS_ERROR_MEMORY;
+		return DBOX_STATUS_ERROR_OUT_OF_MEMORY;
 	}
 
 	child->part = strdup(block->part);
 	if (!child->part) {
 		ErrPrint("Heap: %s\n", strerror(errno));
 		free(child);
-		return LB_STATUS_ERROR_MEMORY;
+		return DBOX_STATUS_ERROR_OUT_OF_MEMORY;
 	}
 
 	img = evas_object_image_add(evas_object_evas_get(edje));
@@ -481,7 +481,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 		ErrPrint("Failed to add an image object\n");
 		free(child->part);
 		free(child);
-		return LB_STATUS_ERROR_FAULT;
+		return DBOX_STATUS_ERROR_FAULT;
 	}
 
 	evas_object_image_preload(img, EINA_FALSE);
@@ -495,7 +495,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 		evas_object_del(img);
 		free(child->part);
 		free(child);
-		return LB_STATUS_ERROR_IO;
+		return DBOX_STATUS_ERROR_IO_ERROR;
 	}
 
 	evas_object_image_size_get(img, &w, &h);
@@ -534,7 +534,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 				evas_object_del(img);
 				free(child->part);
 				free(child);
-				return LB_STATUS_ERROR_INVALID;
+				return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 			}
 
 			if (evas_object_image_region_support_get(img)) {
@@ -556,7 +556,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 					evas_object_del(img);
 					free(child->part);
 					free(child);
-					return LB_STATUS_ERROR_FAULT;
+					return DBOX_STATUS_ERROR_FAULT;
 				}
 
 				ecore_evas_alpha_set(ee, EINA_TRUE);
@@ -569,7 +569,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 					evas_object_del(img);
 					free(child->part);
 					free(child);
-					return LB_STATUS_ERROR_FAULT;
+					return DBOX_STATUS_ERROR_FAULT;
 				}
 
 				src_img = evas_object_image_filled_add(e);
@@ -580,7 +580,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 					evas_object_del(img);
 					free(child->part);
 					free(child);
-					return LB_STATUS_ERROR_FAULT;
+					return DBOX_STATUS_ERROR_FAULT;
 				}
 
 				evas_object_image_alpha_set(src_img, EINA_TRUE);
@@ -597,7 +597,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 					evas_object_del(img);
 					free(child->part);
 					free(child);
-					return LB_STATUS_ERROR_IO;
+					return DBOX_STATUS_ERROR_IO_ERROR;
 				}
 				evas_object_image_size_get(src_img, &rw, &rh);
 				evas_object_image_fill_set(src_img, 0, 0, rw, rh);
@@ -614,7 +614,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 					evas_object_del(img);
 					free(child->part);
 					free(child);
-					return LB_STATUS_ERROR_IO;
+					return DBOX_STATUS_ERROR_IO_ERROR;
 				}
 
 				e = evas_object_evas_get(img);
@@ -626,7 +626,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 
 					free(child->part);
 					free(child);
-					return LB_STATUS_ERROR_MEMORY;
+					return DBOX_STATUS_ERROR_OUT_OF_MEMORY;
 				}
 
 				evas_object_image_colorspace_set(img, EVAS_COLORSPACE_ARGB8888);
@@ -701,7 +701,6 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 	img_opt.shadow.color = 0x99000000;
 #endif
 	if (img_opt.shadow.enabled) {
-#if defined(WEARABLE)
 		ea_effect_h *ea_effect;
 
 		ea_effect = ea_image_effect_create();
@@ -712,7 +711,6 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 
 			ea_image_effect_destroy(ea_effect);
 		}
-#endif
 	}
 
 	/*!
@@ -729,7 +727,7 @@ static int update_script_image(Evas_Object *edje, struct block *block)
 	 * This object is not registered as an access object.
 	 * So the developer should add it to access list manually, using DESC_ACCESS block.
 	 */
-	return LB_STATUS_SUCCESS;
+	return DBOX_STATUS_ERROR_NONE;
 }
 
 static void edje_del_cb(void *_info, Evas *e, Evas_Object *obj, void *event_info)
@@ -798,14 +796,14 @@ static int update_script_script(Evas_Object *edje, struct block *block)
 		edje = find_edje(block->id);
 		if (!edje) {
 			ErrPrint("Edje is not exists\n");
-			return LB_STATUS_ERROR_NOT_EXIST;
+			return DBOX_STATUS_ERROR_NOT_EXIST;
 		}
 	}
 
 	obj_info = evas_object_data_get(edje, "obj_info");
 	if (!obj_info) {
 		ErrPrint("Object info is not valid\n");
-		return LB_STATUS_ERROR_INVALID;
+		return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 	}
 
 	obj = elm_object_part_content_unset(edje, block->part);
@@ -836,13 +834,13 @@ static int update_script_script(Evas_Object *edje, struct block *block)
 
 	if (!block->data || !strlen(block->data) || access(block->data, R_OK) != 0) {
 		DbgPrint("SKIP - Path: [%s]\n", block->data);
-		return LB_STATUS_SUCCESS;
+		return DBOX_STATUS_ERROR_NONE;
 	}
 
 	obj = elm_layout_add(edje);
 	if (!obj) {
 		ErrPrint("Failed to add a new edje object\n");
-		return LB_STATUS_ERROR_FAULT;
+		return DBOX_STATUS_ERROR_FAULT;
 	}
 
 	if (!elm_layout_file_set(obj, block->data, block->option)) {
@@ -853,7 +851,7 @@ static int update_script_script(Evas_Object *edje, struct block *block)
 			ErrPrint("Could not load %s from %s: %s\n", block->option, block->data, edje_load_error_str(err));
 		}
 		evas_object_del(obj);
-		return LB_STATUS_ERROR_IO;
+		return DBOX_STATUS_ERROR_IO_ERROR;
 	}
 
 	evas_object_show(obj);
@@ -862,7 +860,7 @@ static int update_script_script(Evas_Object *edje, struct block *block)
 	if (!new_obj_info) {
 		ErrPrint("Failed to add a obj_info\n");
 		evas_object_del(obj);
-		return LB_STATUS_ERROR_MEMORY;
+		return DBOX_STATUS_ERROR_OUT_OF_MEMORY;
 	}
 
 	new_obj_info->id = strdup(block->target_id);
@@ -870,7 +868,7 @@ static int update_script_script(Evas_Object *edje, struct block *block)
 		ErrPrint("Failed to add a obj_info\n");
 		free(new_obj_info);
 		evas_object_del(obj);
-		return LB_STATUS_ERROR_MEMORY;
+		return DBOX_STATUS_ERROR_OUT_OF_MEMORY;
 	}
 
 	child = malloc(sizeof(*child));
@@ -879,7 +877,7 @@ static int update_script_script(Evas_Object *edje, struct block *block)
 		free(new_obj_info->id);
 		free(new_obj_info);
 		evas_object_del(obj);
-		return LB_STATUS_ERROR_MEMORY;
+		return DBOX_STATUS_ERROR_OUT_OF_MEMORY;
 	}
 
 	child->part = strdup(block->part);
@@ -889,7 +887,7 @@ static int update_script_script(Evas_Object *edje, struct block *block)
 		free(new_obj_info->id);
 		free(new_obj_info);
 		evas_object_del(obj);
-		return LB_STATUS_ERROR_MEMORY;
+		return DBOX_STATUS_ERROR_OUT_OF_MEMORY;
 	}
 
 	child->obj = obj;
@@ -901,31 +899,31 @@ static int update_script_script(Evas_Object *edje, struct block *block)
 	DbgPrint("%s part swallow edje %p\n", block->part, obj);
 	elm_object_part_content_set(edje, block->part, obj);
 	obj_info->children = eina_list_append(obj_info->children, child);
-	return LB_STATUS_SUCCESS;
+	return DBOX_STATUS_ERROR_NONE;
 }
 
 static int update_script_signal(Evas_Object *edje, struct block *block)
 {
 	ErrPrint("Signal emit function is not supported\n");
-	return LB_STATUS_ERROR_INVALID;
+	return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 }
 
 static int update_script_drag(Evas_Object *edje, struct block *block)
 {
 	ErrPrint("Signal emit function is not supported\n");
-	return LB_STATUS_ERROR_INVALID;
+	return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 }
 
 static int update_info(Evas_Object *edje, struct block *block)
 {
 	ErrPrint("Signal emit function is not supported\n");
-	return LB_STATUS_ERROR_INVALID;
+	return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 }
 
 static int update_access(Evas_Object *edje, struct block *block)
 {
 	ErrPrint("Accessibility is not able to be apply for making a shot\n");
-	return LB_STATUS_ERROR_INVALID;
+	return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 }
 
 static inline void consuming_parsed_block(Evas_Object *edje, int lineno, struct block *block)
@@ -1037,7 +1035,7 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 	fp = fopen(descfile, "rt");
 	if (!fp) {
 		ErrPrint("Error: %s [%s]\n", descfile, strerror(errno));
-		return LB_STATUS_ERROR_IO;
+		return DBOX_STATUS_ERROR_IO_ERROR;
 	}
 
 	/*!
@@ -1056,7 +1054,7 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 		if (fclose(fp) != 0) {
 			ErrPrint("fclose: %s\n", strerror(errno));
 		}
-		return LB_STATUS_ERROR_MEMORY;
+		return DBOX_STATUS_ERROR_OUT_OF_MEMORY;
 	}
 	info->id = NULL;
 	info->children = NULL;
@@ -1087,7 +1085,7 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 				if (fclose(fp) != 0) {
 					ErrPrint("fclose: %s\n", strerror(errno));
 				}
-				return LB_STATUS_ERROR_INVALID;
+				return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 			}
 			break;
 
@@ -1107,7 +1105,7 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 				if (fclose(fp) != 0) {
 					ErrPrint("fclose: %s\n", strerror(errno));
 				}
-				return LB_STATUS_ERROR_MEMORY;
+				return DBOX_STATUS_ERROR_OUT_OF_MEMORY;
 			}
 
 			state = FIELD;
@@ -1422,7 +1420,7 @@ HAPI int script_handler_parse_desc(Evas_Object *edje, const char *descfile)
 	if (fclose(fp) != 0) {
 		ErrPrint("fclose: %s\n", strerror(errno));
 	}
-	return LB_STATUS_SUCCESS;
+	return DBOX_STATUS_ERROR_NONE;
 
 errout:
 	ErrPrint("Parse error at %d file %s\n", lineno, util_basename(descfile));
@@ -1432,7 +1430,7 @@ errout:
 	if (fclose(fp) != 0) {
 		ErrPrint("fclose: %s\n", strerror(errno));
 	}
-	return LB_STATUS_ERROR_INVALID;
+	return DBOX_STATUS_ERROR_INVALID_PARAMETER;
 }
 
 /* End of a file */

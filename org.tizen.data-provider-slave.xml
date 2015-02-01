@@ -1,17 +1,46 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<manifest xmlns="http://tizen.org/ns/packages" package="org.tizen.data-provider-slave" version="0.5.4" install-location="auto">
-	<label>Dynamic Box Provider (Default)</label>
+<manifest xmlns="http://tizen.org/ns/packages" package="org.tizen.data-provider-slave" version="1.0.0" install-location="auto" support-mode="screen-reader">
+	<label>Dynamic Box Provider (slave)</label>
 	<author email="nicesj.park@samsung.com" href="www.samsung.com">Sung-jae Park</author>
 	<author email="yjoo93.park@samsung.com" href="www.samsung.com">Youngjoo Park</author>
-	<description>Dynamic Box Provider (Default)</description>
+	<description>Dynamic Box Provider (slave)</description>
 
 	<ui-application appid="org.tizen.data-provider-slave" exec="/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave" nodisplay="true" multiple="true" type="capp" taskmanage="false">
-		<icon>org.tizen.data-provider-slave.png</icon>
-		<label>Dynamic Box Provider (Default)</label>
-		<label xml:lang="en-us">Dynamic Box Provider (Default)</label>
+	    <icon>org.tizen.data-provider-slave.png</icon>
+	    <label>Widgets</label>
+	    <label xml:lang="as-in">ৱিজেটসমূহ</label>
+	    <label xml:lang="bn-in">উইজেটগুলি</label>
+	    <label xml:lang="en-gb">Widgets</label>
+	    <label xml:lang="en-ph">Widgets</label>
+	    <label xml:lang="en-us">Widgets</label>
+	    <label xml:lang="es-us">Widgets</label>
+	    <label xml:lang="gu-in">વિજેટ્સ</label>
+	    <label xml:lang="hi-in">विजेट्स</label>
+	    <label xml:lang="id-id">Widget</label>
+	    <label xml:lang="km-kh">វីដជីត</label>
+	    <label xml:lang="kn-in">ವಿಜೆಟ್‌ಗಳು</label>
+	    <label xml:lang="ko-kr">위젯</label>
+	    <label xml:lang="lo-la">ວິດເຈັດ</label>
+	    <label xml:lang="ml-in">വിജറ്റുകള്‍</label>
+	    <label xml:lang="mr-in">विजेट्स</label>
+	    <label xml:lang="ms-my">Widget</label>
+	    <label xml:lang="my-mm">၀စ္ဂ်စ္တ္မ်ား</label>
+	    <label xml:lang="ne-np">विजेटहरू</label>
+	    <label xml:lang="or-in">ୱିଜେଟଗୁଡିକ</label>
+	    <label xml:lang="pa-in">ਵਿੱਜੇਟਸ</label>
+	    <label xml:lang="pt-br">Widgets</label>
+	    <label xml:lang="si-lk">විජෙට්ටු</label>
+	    <label xml:lang="ta-in">விட்ஜெட்கள்</label>
+	    <label xml:lang="te-in">విడ్జెట్‌లు</label>
+	    <label xml:lang="th-th">Widget</label>
+	    <label xml:lang="tl-ph">Mga widget</label>
+	    <label xml:lang="ur-pk">وجیٹس</label>
+	    <label xml:lang="vi-vn">Widget</label>
+	    <label xml:lang="zh-cn">小组件</label>
 	</ui-application>
 	<privileges>
 		<privilege>http://tizen.org/privilege/location</privilege>
+		<privilege>http://developer.samsung.com/tizen/privilege/privacymanager.read</privilege> <!-- weather -->
 	</privileges>
 
 	<ui-application appid="org.tizen.data-provider-slave.icon" exec="/usr/apps/org.tizen.data-provider-slave/bin/icon-provider-slave" nodisplay="true" multiple="false" type="capp" taskmanage="false">

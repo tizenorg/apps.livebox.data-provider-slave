@@ -23,6 +23,12 @@ extern void *util_timer_add(double interval, Eina_Bool (*cb)(void *data), void *
 extern void util_timer_interval_set(void *timer, double interval);
 extern int util_get_filesize(const char *filename);
 extern double util_time_delay_for_compensation(double period);
+extern void util_dump_current_so_info(const char *path);
+
+extern void *util_screen_get(void);
+extern int util_screen_size_get(int *width, int *height);
+extern int util_screen_init(void);
+extern int util_screen_fini(void);
 
 #define SCHEMA_FILE	"file://"
 #define SCHEMA_PIXMAP	"pixmap://"

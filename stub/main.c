@@ -13,17 +13,17 @@
 
 int errno;
 
-const char *livebox_find_pkgname(const char *filename)
+const char *dynamicbox_find_pkgname(const char *filename)
 {
 	return NULL;
 }
 
-int livebox_request_update_by_id(const char *filename)
+int dynamicbox_request_update_by_id(const char *filename)
 {
 	return 0;
 }
 
-int livebox_trigger_update_monitor(const char *filename, int is_pd)
+int dynamicbox_trigger_update_monitor(const char *filename, int is_pd)
 {
 	return 0;
 }

@@ -59,9 +59,7 @@ collections {
 			part {
 				name: "name";
 				type: TEXT;
-#if defined(WEARABLE)
 				effect: TIZEN_GLOW_SHADOW;	// TIZEN_SOFT_GLOW_SHADOW, TIZEN_SHADOW
-#endif
 				description {
 					rel1 { relative: 10/175 133/175; }
 					rel2 { relative: 165/175 167/175; }
@@ -108,9 +106,7 @@ collections {
 			part {
 				name: "name";
 				type: TEXT;
-#if defined(WEARABLE)
-				effect: TIZEN_GLOW_SHADOW;	// TIZEN_SOFT_GLOW_SHADOW, TIZEN_SHADOW
-#endif
+				effect: TIZEN_GLOW_SHADOW;
 				description {
 					rel1 { relative: 99.5/354 133/175; }
 					rel2 { relative: 254.5/354 167/175; }
@@ -157,9 +153,7 @@ collections {
 			part {
 				name: "name";
 				type: TEXT;
-#if defined(WEARABLE)
-				effect: TIZEN_GLOW_SHADOW;	// TIZEN_SOFT_GLOW_SHADOW, TIZEN_SHADOW
-#endif
+				effect: TIZEN_GLOW_SHADOW;
 				description {
 					rel1 { relative: 99.5/354 222.5/354; }
 					rel2 { relative: 254.5/354 256.5/354; }
@@ -206,9 +200,7 @@ collections {
 			part {
 				name: "name";
 				type: TEXT;
-#if defined(WEARABLE)
-				effect: TIZEN_GLOW_SHADOW;	// TIZEN_SOFT_GLOW_SHADOW, TIZEN_SHADOW
-#endif
+				effect: TIZEN_GLOW_SHADOW;
 				description {
 					rel1 { relative: 278.5/712 133/175; }
 					rel2 { relative: 433.5/712 167/175; }
@@ -255,9 +247,7 @@ collections {
 			part {
 				name: "name";
 				type: TEXT;
-#if defined(WEARABLE)
-				effect: TIZEN_GLOW_SHADOW;	// TIZEN_SOFT_GLOW_SHADOW, TIZEN_SHADOW
-#endif
+				effect: TIZEN_GLOW_SHADOW;
 				description {
 					rel1 { relative: 278.5/712 222.5/354; }
 					rel2 { relative: 433.5/712 256.5/354; }
@@ -304,9 +294,7 @@ collections {
 			part {
 				name: "name";
 				type: TEXT;
-#if defined(WEARABLE)
-				effect: TIZEN_GLOW_SHADOW;	// TIZEN_SOFT_GLOW_SHADOW, TIZEN_SHADOW
-#endif
+				effect: TIZEN_GLOW_SHADOW;
 				description {
 					rel1 { relative: 278.5/712 312/533; }
 					rel2 { relative: 433.5/712 346/533; }
@@ -353,9 +341,7 @@ collections {
 			part {
 				name: "name";
 				type: TEXT;
-#if defined(WEARABLE)
-				effect: TIZEN_GLOW_SHADOW;	// TIZEN_SOFT_GLOW_SHADOW, TIZEN_SHADOW
-#endif
+				effect: TIZEN_GLOW_SHADOW;
 				description {
 					rel1 { relative: 278.5/712 401.5/712; }
 					rel2 { relative: 433.5/712 435.5/712; }
@@ -402,9 +388,7 @@ collections {
 			part {
 				name: "name";
 				type: TEXT;
-#if defined(WEARABLE)
-				effect: TIZEN_GLOW_SHADOW;	// TIZEN_SOFT_GLOW_SHADOW, TIZEN_SHADOW
-#endif
+				effect: TIZEN_GLOW_SHADOW;
 				description {
 					rel1 { relative: 278.5/712 491/891; }
 					rel2 { relative: 433.5/712 525/891; }
@@ -451,9 +435,7 @@ collections {
 			part {
 				name: "name";
 				type: TEXT;
-#if defined(WEARABLE)
-				effect: TIZEN_GLOW_SHADOW;	// TIZEN_SOFT_GLOW_SHADOW, TIZEN_SHADOW
-#endif
+				effect: TIZEN_GLOW_SHADOW;
 				description {
 					rel1 { relative: 278.5/712 580.5/1070; }
 					rel2 { relative: 433.5/712 614.5/1070; }

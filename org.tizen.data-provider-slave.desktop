@@ -1,9 +1,0 @@
-Name=Live Data Provider - Slave
-Type=Application
-Exec=/usr/apps/org.tizen.data-provider-slave/bin/data-provider-slave
-Icon=org.tizen.data-provider-slave.png
-NoDisplay=True
-Network=True
-Comment=Homescreen-Live Box content data provider (slave)
-X-TIZEN-TaskManage=False
-X-TIZEN-Multiple=True

@@ -14,13 +14,12 @@ pkg_check_modules(pkg REQUIRED
 	glib-2.0
 	gio-2.0
 	bundle
-	ecore-x
 	ecore
-	provider
-	livebox-service
+	dynamicbox_provider
+	dynamicbox_service
 	edje
 	evas
-	livebox
+	dynamicbox
 	elementary
 	capi-system-system-settings
 	com-core
@@ -29,10 +28,23 @@ pkg_check_modules(pkg REQUIRED
 	json-glib-1.0
 )
 
+IF (X11_SUPPORT)
+pkg_check_modules(pkg_extra REQUIRED
+	ecore-x
+)
+ENDIF (X11_SUPPORT)
+
+IF (WAYLAND_SUPPORT)
+pkg_check_modules(pkg_extra REQUIRED
+	ecore-wayland
+)
+ENDIF (WAYLAND_SUPPORT)
+
 SET(PACKAGE "${PROJECT_NAME}")
 SET(LOCALEDIR "/usr/apps/org.tizen.${PROJECT_NAME}/res/locale")
 SET(ICON_PROVIDER "icon-provider-slave")
 SET(EXE_LOADER "${PROJECT_NAME}")
+SET(THEME_DIR "/opt/usr/share/data-provider-slave/theme")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -53,71 +65,63 @@ ADD_DEFINITIONS("-DNDEBUG")
 #ADD_DEFINITIONS("-D_ENABLE_MCHECK")
 ADD_DEFINITIONS("-DLOG_TAG=\"DATA_PROVIDER_SLAVE\"")
 ADD_DEFINITIONS("-D_USE_ECORE_TIME_GET")
+ADD_DEFINITIONS("-DTHEME_DIR=\"${THEME_DIR}\"")
 #ADD_DEFINITIONS("-D_ESTIMATE_PERF")
 
 ADD_DEFINITIONS(${pkg_CFLAGS})
+ADD_DEFINITIONS(${pkg_LDFLAGS})
+ADD_DEFINITIONS(${pkg_extra_CFLAGS})
+ADD_DEFINITIONS(${pkg_extra_LDFLAGS})
 
-FOREACH(flag ${pkg_CFLAGS})
-	SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${flag}")
-	SET(EXTRA_CXXFLAGS "${EXTRA_CXXFLAGS} ${flag}")
-ENDFOREACH(flag)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Winline -Werror -g -fno-builtin-malloc -fpie")
 
-IF (MOBILE)
-SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} -DMOBILE")
-ENDIF (MOBILE)
+SET(BUILD_SOURCE
+    src/main.c
+    src/so_handler.c
+    src/fault.c
+    src/update_monitor.c
+    src/util.c
+    src/dbox.c
+    src/client.c
+    src/critical_log.c
+    src/connection.c
+    src/theme_loader.c
+)
 
-IF (WEARABLE)
-SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} -DWEARABLE")
-ENDIF (WEARABLE)
+IF (WAYLAND_SUPPORT)
+	ADD_DEFINITIONS("-DHAVE_WAYLAND")
+	SET(BUILD_SOURCE 
+		${BUILD_SOURCE}
+		src/util_wayland.c
+	)
+ENDIF (WAYLAND_SUPPORT)
 
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_CFLAGS} -Wall")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_CXXFLAGS} -Wall")
-
-# -fpie
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Winline -Werror -g -fno-builtin-malloc")
-#SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
-
-SET(EXTRA_LDFLAGS "-ldl")
-FOREACH(flag ${pkg_LDFLAGS})
-	IF (flag STREQUAL -L)
-		MESSAGE("Ignore -L")
-	ELSE()
-		SET(EXTRA_LDFLAGS "${EXTRA_LDFLAGS} ${flag}")
-	ENDIF()
-ENDFOREACH(flag)
-SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_LDFLAGS}")
+IF (X11_SUPPORT)
+	ADD_DEFINITIONS("-DHAVE_X11")
+	SET(BUILD_SOURCE 
+		${BUILD_SOURCE}
+		src/util_x11.c
+	)
+ENDIF (X11_SUPPORT)
 
 ADD_EXECUTABLE("${PROJECT_NAME}"
-	src/main.c
-	src/so_handler.c
-	src/fault.c
-	src/update_monitor.c
-	src/conf.c
-	src/util.c
-	src/lb.c
-	src/client.c
-	src/critical_log.c
+	${BUILD_SOURCE}
 )
-TARGET_LINK_LIBRARIES("${PROJECT_NAME}" ${EXTRA_LDFLAGS})
+
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} "-ldl -pie" ${pkg_extra_LDFLAGS} ${pkg_LDFLAGS})
 
 ADD_EXECUTABLE(${ICON_PROVIDER}
 	icon_src/main.c
 	icon_src/script_handler.c
 	src/util.c
 )
-TARGET_LINK_LIBRARIES(${ICON_PROVIDER} ${EXTRA_LDFLAGS})
+TARGET_LINK_LIBRARIES(${ICON_PROVIDER} "-ldl -pie" ${pkg_extra_LDFLAGS} ${pkg_LDFLAGS})
 
 #INSTALL(FILES ${CMAKE_SOURCE_DIR}/org.tizen.data-provider-slave.desktop DESTINATION /usr/share/applications)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/org.tizen.data-provider-slave.xml DESTINATION /usr/share/packages)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/LICENSE DESTINATION /usr/share/license RENAME "org.tizen.${PROJECT_NAME}")
-
-IF (WEARABLE)
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/org.tizen.data-provider-slave.rule DESTINATION /etc/smack/accesses2.d)
-ELSE (WEARABLE)
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/org.tizen.data-provider-slave.rule DESTINATION /opt/etc/smack/accesses.d)
-ENDIF (WEARABLE)
-
-
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/org.tizen.data-provider-slave.efl DESTINATION /etc/smack/accesses.d)
 INSTALL(TARGETS ${ICON_PROVIDER} DESTINATION /usr/apps/org.tizen.${PROJECT_NAME}/bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 INSTALL(TARGETS ${EXE_LOADER} DESTINATION /usr/apps/org.tizen.${PROJECT_NAME}/bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 

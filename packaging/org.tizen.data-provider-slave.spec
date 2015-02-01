@@ -1,8 +1,9 @@
+%bcond_with wayland
 %define app_data /opt/usr/apps/org.tizen.data-provider-slave/data
 
 Name: org.tizen.data-provider-slave
-Summary: Plugin type livebox service provider
-Version: 0.14.1
+Summary: Plugin type dynamicbox service provider
+Version: 1.0.0
 Release: 1
 Group: HomeTF/Livebox
 License: Flora
@@ -19,32 +20,37 @@ BuildRequires: pkgconfig(db-util)
 BuildRequires: pkgconfig(glib-2.0)
 BuildRequires: pkgconfig(gio-2.0)
 BuildRequires: pkgconfig(bundle)
-BuildRequires: pkgconfig(ecore-x)
-BuildRequires: pkgconfig(provider)
-BuildRequires: pkgconfig(heap-monitor)
-BuildRequires: pkgconfig(livebox-service)
+BuildRequires: pkgconfig(dynamicbox_provider)
+BuildRequires: pkgconfig(dynamicbox_service)
 BuildRequires: pkgconfig(capi-appfw-application)
 BuildRequires: pkgconfig(capi-appfw-app-manager)
 BuildRequires: pkgconfig(ecore)
 BuildRequires: pkgconfig(edje)
 BuildRequires: pkgconfig(evas)
-BuildRequires: pkgconfig(livebox)
+BuildRequires: pkgconfig(dynamicbox)
 BuildRequires: pkgconfig(elementary)
 BuildRequires: pkgconfig(com-core)
 BuildRequires: pkgconfig(shortcut)
 BuildRequires: pkgconfig(efl-assist)
 BuildRequires: pkgconfig(json-glib-1.0)
-BuildRequires: hash-signer
+%if %{with wayland}
+BuildRequires: pkgconfig(ecore-wayland)
+%else
+BuildRequires: pkgconfig(ecore-x)
+%endif
+#BuildRequires: hash-signer
 BuildRequires: pkgconfig(capi-system-system-settings)
+BuildRequires: model-build-features
+#Requires(post): signing-client
 
-%if "%{sec_product_feature_livebox}" == "0"
+%if "%{model_build_feature_livebox}" == "0"
 ExclusiveArch:
 %endif
 
 %description
-Plugin type liveboxes are managed by this.
+Plugin type dynamicboxes are managed by this.
 Supporting the EFL.
-Supporting the In-house livebox only.
+Supporting the In-house dynamicbox only.
 
 %prep
 %setup -q
@@ -63,17 +69,16 @@ export CXXFLAGS="${CXXFLAGS} -DTIZEN_ENGINEER_MODE"
 export FFLAGS="${FFLAGS} -DTIZEN_ENGINEER_MODE"
 %endif
 
-%if "%{_repository}" == "wearable"
-export MOBILE=Off
-export WEARABLE=On
+%if %{with wayland}
+export WAYLAND_SUPPORT=On
+export X11_SUPPORT=Off
 %else
-export MOBILE=On
-export WEARABLE=Off
+export WAYLAND_SUPPORT=Off
+export X11_SUPPORT=On
 %endif
 
-%cmake . -DMOBILE=${MOBILE} -DWEARABLE=${WEARABLE}
-#-fpie  LDFLAGS="${LDFLAGS} -pie -O3"
-CFLAGS="${CFLAGS} -Wall -Winline -Werror -fno-builtin-malloc" make %{?jobs:-j%jobs}
+%cmake . -DWAYLAND_SUPPORT=${WAYLAND_SUPPORT} -DX11_SUPPORT=${X11_SUPPORT}
+make %{?jobs:-j%jobs}
 
 %install
 rm -rf %{buildroot}
@@ -87,6 +92,7 @@ mkdir -p %{buildroot}/%{_datarootdir}/license
 mkdir -p %{buildroot}%{app_data}
 
 %post
+#/usr/bin/signing-client/hash-signer-client.sh -a -d -p platform %{_prefix}/apps/%{name}
 chown 5000:5000 %{app_data}
 chmod 755 %{app_data}
 
@@ -96,12 +102,8 @@ chmod 755 %{app_data}
 %{_prefix}/apps/%{name}
 %{_datarootdir}/packages/%{name}.xml
 %{_datarootdir}/license/*
-
-%if "%{_repository}" == "wearable"
-%{_sysconfdir}/smack/accesses2.d/%{name}.rule
-%else
-/opt/%{_sysconfdir}/smack/accesses.d/%{name}.rule
-%endif
+%{_sysconfdir}/smack/accesses.d/%{name}.efl
+/opt/usr/share/data-provider-slave/*
 %dir %{app_data}
 
 # End of a file

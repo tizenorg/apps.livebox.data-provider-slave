@@ -1,16 +1,12 @@
 <manifest>
 	<!-- Provider slave label -->
 	<define>
-		<domain name="org.tizen.data-provider-slave" policy="shared" />
-		<request>
-			<smack request="contacts-service" type="rwx" />
-			<smack request="contacts-service::vconf" type="rwxl" />
-			<smack request="contacts-service::db" type="rw" />
-			<smack request="contacts-service::svc" type="rlw" />
-			<smack request="contacts-service::vconf-private" type="rl" />
-		</request>
+		<domain name="org.tizen.data-provider-slave" policy="restricted" />
 	</define>
-	
+	<request>
+		<domain name="org.tizen.data-provider-slave" />
+	</request>
+
 	<assign>
 		<!-- Application folder -->
 		<filesystem path="/usr/apps/org.tizen.data-provider-slave" label="org.tizen.data-provider-slave" />
@@ -29,5 +25,9 @@
 		<!-- Application Data folder -->
 		<filesystem path="/opt/usr/apps/org.tizen.data-provider-slave/data" label="org.tizen.data-provider-slave" />
 		<filesystem path="/opt/usr/apps/org.tizen.data-provider-slave" label="org.tizen.data-provider-slave" />
+
+		<!-- resource folder -->
+		<filesystem path="/opt/usr/share/data-provider-slave" label="org.tizen.data-provider-slave" />
+		<filesystem path="/opt/usr/share/data-provider-slave/theme" label="org.tizen.data-provider-slave" />
 	</assign>
 </manifest>
